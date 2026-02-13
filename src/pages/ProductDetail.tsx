@@ -7,6 +7,9 @@ import { useCart } from "@/context/CartContext";
 import { ShoppingCart, Heart, Star, Minus, Plus } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { lazy, Suspense } from "react";
+
+const ProductConfigurator3D = lazy(() => import("@/components/store/ProductConfigurator3D"));
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -89,6 +92,12 @@ const ProductDetail = () => {
             </div>
           </motion.div>
         </div>
+      </div>
+
+      <div className="container mx-auto px-4 lg:px-8 pb-16">
+        <Suspense fallback={<div className="h-[400px] flex items-center justify-center text-muted-foreground">Cargando configurador 3D...</div>}>
+          <ProductConfigurator3D />
+        </Suspense>
       </div>
 
       <Footer />
