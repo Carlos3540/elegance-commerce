@@ -21,12 +21,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ShoppingBag, MapPin, User, Phone, Mail, FileText,
-  Home, Building2, Briefcase, Warehouse, ChevronDown,
-  Truck, CheckCircle2, AlertCircle, Loader2, ArrowLeft,
-  Shield, CreditCard, MessageCircle,
-} from 'lucide-react';
+import { ShoppingCart, Package, Heart, Trash2, ArrowRight, X, ChevronDown, CheckCircle2, MapPin, Truck, Shield, AlertCircle, Loader2, Home, Building2, Briefcase, Warehouse, CreditCard, MessageCircle } from "lucide-react";
+import { BoldScriptButton } from '@/components/store/BoldScriptButton';
 import { useCart }          from '@/context/CartContext';
 import { useAuth }          from '@/context/AuthContext';
 import { useShippingQuote } from '@/hooks/useShippingQuote';
@@ -79,7 +75,8 @@ const Checkout: React.FC = () => {
   // ── Estados de pago ────────────────────────────────────────────
   const [isProcessing, setProcessing] = useState(false);
   const [isPreparingBold, setPreparingBold] = useState(false); // cargando SDK + firma
-  const [canPay, setCanPay]           = useState(false);       // instancia Bold lista
+  const [canPay, setCanPay]           = useState(false);       // hash listo
+  const [boldHash, setBoldHash]       = useState<string | null>(null);
   const [formError, setFormError]     = useState<string | null>(null);
 
   // ── Formulario ─────────────────────────────────────────────────
@@ -154,36 +151,16 @@ const Checkout: React.FC = () => {
       setCanPay(false);
       setFormError(null);
 
-      // 1. Destruir instancia previa (si existe)
-      resetearInstanciaBold();
-
-      const newTotal    = subtotal + cheapest.price;
-      const newShipping = cheapest.price;
-
-      // 2. Pedir firma HMAC al servidor con el total actualizado
+      // 1. Pedir firma HMAC al servidor con el total actualizado
       const { integrity_hash } = await pedirFirmaBold(
         orderRef.current.boldOrderId,
-        newTotal,
+        total,
         subtotal,
-        newShipping,
+        shippingCost,
       );
 
-      // 3. Preparar instancia Bold (sin abrir el modal)
-      //    customerData pre-llena el formulario Bold para mejor UX
-      await prepararCheckoutBold({
-        boldOrderId:   orderRef.current.boldOrderId,
-        amount:        newTotal,
-        integrityHash: integrity_hash,
-        redirectUrl:   `${window.location.origin}/checkout/exitoso?order=${orderRef.current.orderId}`,
-        customerData: {
-          email:          form.email,
-          fullName:       form.full_name,
-          phone:          form.phone,
-          documentNumber: form.document_number,
-          documentType:   'CC',
-        },
-      });
-
+      // 2. Guardar el hash en estado para renderizar el botón de Bold
+      setBoldHash(integrity_hash);
       setCanPay(true);
     } catch (err: any) {
       console.error('[handlePrepararBold] Error:', err);
@@ -655,14 +632,7 @@ const Checkout: React.FC = () => {
                   </div>
 
                   {/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-                      BOTÓN DE PAGO — integración personalizada Bold.
-                      
-                      Cuando el usuario hace clic, llama abrirCheckoutBold()
-                      que internamente ejecuta checkout.open() de la instancia
-                      Bold que ya fue preparada por handlePrepararBold().
-                      
-                      Bold abre su propio modal overlay — sin iframes en
-                      nuestro DOM, sin renderMode embedded.
+                      BOTÓN DE PAGO — integración manual script Bold.
                       ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */}
                   <div className="mt-6">
                     {isPreparingBold || (!canPay && !formError) ? (
@@ -671,16 +641,16 @@ const Checkout: React.FC = () => {
                         <Loader2 size={18} className="animate-spin" />
                         {isPreparingBold ? 'Preparando el pago...' : 'Cargando pasarela de pago...'}
                       </div>
-                    ) : canPay ? (
-                      /* Botón de pago del comercio — abre Bold al hacer clic */
-                      <button
-                        type="button"
-                        onClick={handlePagar}
-                        className="w-full bg-gray-900 text-white font-black text-sm uppercase tracking-widest py-5 rounded-2xl hover:bg-gray-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-gray-900/20"
-                      >
-                        <CreditCard size={18} />
-                        Pagar {COP(total)} con Bold
-                      </button>
+                    ) : canPay && boldHash && orderRef.current ? (
+                      /* Botón oficial de Bold inyectado vía Script */
+                      <BoldScriptButton
+                        apiKey={import.meta.env.VITE_BOLD_API_KEY as string}
+                        orderId={orderRef.current.boldOrderId}
+                        currency="COP"
+                        amount={total}
+                        integritySignature={boldHash}
+                        redirectionUrl={`${window.location.origin}/checkout/exitoso?order=${orderRef.current.orderId}`}
+                      />
                     ) : null}
 
                     {canPay && (
