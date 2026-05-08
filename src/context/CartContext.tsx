@@ -1,58 +1,341 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
-import { Product, CartItem } from "@/data/products";
+// src/context/CartContext.tsx
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { supabase, CartItem, Product } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+
+// ── Tipos ────────────────────────────────────────────────────────
+interface GuestItem {
+  id: string;           // product.id usado como id temporal
+  product_id: string;
+  quantity: number;
+  unit_price: number;
+  product: Product;
+}
 
 interface CartContextType {
-  items: CartItem[];
-  addItem: (product: Product) => void;
-  removeItem: (id: number) => void;
-  updateQuantity: (id: number, quantity: number) => void;
-  clearCart: () => void;
+  items: (CartItem | GuestItem)[];
+  isLoading: boolean;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
+  addItem: (product: Product, qty?: number) => Promise<void>;
+  removeItem: (cartItemId: string) => Promise<void>;
+  updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
+  clearCart: () => Promise<void>;
   totalItems: number;
   subtotal: number;
   tax: number;
   total: number;
+  isGuest: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
+const GUEST_CART_KEY = 'evolet_guest_cart';
+
+// ── Helpers guest cart ────────────────────────────────────────────
+const loadGuestCart = (): GuestItem[] => {
+  try {
+    const raw = localStorage.getItem(GUEST_CART_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+const saveGuestCart = (items: GuestItem[]) => {
+  localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  // Esperamos tanto el user como el profile — cuando profile existe el trigger ya corrió
+  const { user, profile } = useAuth();
+  const [cartId, setCartId]       = useState<string | null>(null);
+  const [items, setItems]         = useState<(CartItem | GuestItem)[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen]       = useState(false);
 
-  const addItem = useCallback((product: Product) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.id === product.id);
-      if (existing) {
-        return prev.map((i) => i.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
-    setIsOpen(true);
+  const isGuest = !user;
+
+  // ── GUEST: cargar desde localStorage ─────────────────────────
+  const loadGuest = useCallback(() => {
+    setItems(loadGuestCart());
   }, []);
 
-  const removeItem = useCallback((id: number) => {
-    setItems((prev) => prev.filter((i) => i.id !== id));
-  }, []);
+  // ── SUPABASE: obtener o crear carrito ─────────────────────────
+  // NOTA: usamos .maybeSingle() para evitar el error 406 cuando no existe fila
+  const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
+    // 1. Buscar carrito existente (maybeSingle → null si no existe, sin error 406)
+    const { data: existing, error: findErr } = await supabase
+      .from('carts')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
 
-  const updateQuantity = useCallback((id: number, quantity: number) => {
-    if (quantity <= 0) {
-      setItems((prev) => prev.filter((i) => i.id !== id));
-    } else {
-      setItems((prev) => prev.map((i) => i.id === id ? { ...i, quantity } : i));
+    if (findErr) {
+      console.error('CartContext: error buscando carrito:', findErr.message);
+      throw findErr;
     }
+    if (existing) return existing.id;
+
+    // 2. Crear carrito — el perfil ya existe porque esperamos a que `profile` no sea null
+    const { data: newCart, error: insertErr } = await supabase
+      .from('carts')
+      .insert({ user_id: userId })
+      .select('id')
+      .maybeSingle();
+
+    if (insertErr) {
+      console.error('CartContext: error creando carrito:', insertErr.code, insertErr.message);
+      throw insertErr;
+    }
+    return newCart?.id ?? '';
   }, []);
 
-  const clearCart = useCallback(() => setItems([]), []);
+  // ── SUPABASE: cargar items ────────────────────────────────────
+  const fetchItems = useCallback(async (cId: string) => {
+    const { data, error } = await supabase
+      .from('cart_items')
+      .select(`
+        *,
+        product:products (
+          id, name, slug, image_url, price,
+          compare_price, stock, sku, is_active
+        )
+      `)
+      .eq('cart_id', cId)
+      .order('created_at', { ascending: true });
 
+    if (error) throw error;
+    setItems(data || []);
+  }, []);
+
+  // ── SUPABASE: migrar carrito guest al loguearse ───────────────
+  const migrateGuestCart = useCallback(async (cId: string) => {
+    const guestItems = loadGuestCart();
+    if (guestItems.length === 0) return;
+
+    for (const gi of guestItems) {
+      const { data: existing } = await supabase
+        .from('cart_items')
+        .select('id, quantity')
+        .eq('cart_id', cId)
+        .eq('product_id', gi.product_id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('cart_items')
+          .update({ quantity: existing.quantity + gi.quantity })
+          .eq('id', existing.id);
+      } else {
+        await supabase
+          .from('cart_items')
+          .insert({
+            cart_id: cId,
+            product_id: gi.product_id,
+            unit_price: gi.unit_price,
+            quantity: gi.quantity,
+          });
+      }
+    }
+    localStorage.removeItem(GUEST_CART_KEY);
+  }, []);
+
+  // ── Inicializar ───────────────────────────────────────────────
+  // Dependemos de `profile` (no solo de `user`) para garantizar que el trigger
+  // de Supabase ya creó el registro en 'profiles' antes de intentar crear el carrito.
+  useEffect(() => {
+    if (!user || !profile) {
+      // Sin usuario o perfil: modo guest
+      if (!user) {
+        setCartId(null);
+        loadGuest();
+      }
+      return;
+    }
+
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const init = async () => {
+      setIsLoading(true);
+      try {
+        const cId = await getOrCreateCart(user.id);
+        if (!cId) {
+          setIsLoading(false);
+          return;
+        }
+        setCartId(cId);
+
+        // Migrar guest items si los hay
+        await migrateGuestCart(cId);
+        await fetchItems(cId);
+
+        // Realtime
+        channel = supabase
+          .channel(`cart-${cId}`)
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'cart_items', filter: `cart_id=eq.${cId}` },
+            () => fetchItems(cId)
+          )
+          .subscribe();
+      } catch (err) {
+        console.error('CartContext init error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    init();
+    return () => { if (channel) supabase.removeChannel(channel); };
+  }, [user, profile, getOrCreateCart, fetchItems, loadGuest, migrateGuestCart]);
+
+  // ── Agregar producto ──────────────────────────────────────────
+  const addItem = useCallback(async (product: Product, qty: number = 1) => {
+
+    // ── GUEST ──
+    if (isGuest) {
+      const current = loadGuestCart();
+      const idx = current.findIndex(i => i.product_id === product.id);
+      if (idx >= 0) {
+        current[idx].quantity = Math.min(current[idx].quantity + qty, product.stock);
+      } else {
+        current.push({
+          id: product.id,
+          product_id: product.id,
+          quantity: qty,
+          unit_price: product.price,
+          product,
+        });
+      }
+      saveGuestCart(current);
+      setItems(current);
+      setIsOpen(true);
+      return;
+    }
+
+    // ── USUARIO LOGUEADO ──
+    if (!cartId) return;
+
+    const existing = items.find(i => i.product_id === product.id);
+
+    if (existing) {
+      const newQty = Math.min(existing.quantity + qty, product.stock);
+      const { error } = await supabase
+        .from('cart_items')
+        .update({ quantity: newQty })
+        .eq('id', existing.id);
+
+      if (error) throw error;
+      setItems(prev => prev.map(i => i.id === existing.id ? { ...i, quantity: newQty } : i));
+    } else {
+      const { data, error } = await supabase
+        .from('cart_items')
+        .insert({
+          cart_id: cartId,
+          product_id: product.id,
+          unit_price: product.price,
+          quantity: qty,
+        })
+        .select(`
+          *,
+          product:products (
+            id, name, slug, image_url, price,
+            compare_price, stock, sku, is_active
+          )
+        `)
+        .single();
+
+      if (error) throw error;
+      if (data) {
+        setItems(prev => [...prev, data]);
+      } else {
+        await fetchItems(cartId);
+      }
+    }
+
+    setIsOpen(true);
+  }, [isGuest, cartId, items]);
+
+  // ── Eliminar item ─────────────────────────────────────────────
+  const removeItem = useCallback(async (cartItemId: string) => {
+    if (isGuest) {
+      const updated = loadGuestCart().filter(i => i.id !== cartItemId);
+      saveGuestCart(updated);
+      setItems(updated);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('id', cartItemId);
+
+    if (error) throw error;
+    setItems(prev => prev.filter(i => i.id !== cartItemId));
+  }, [isGuest]);
+
+  // ── Actualizar cantidad ───────────────────────────────────────
+  const updateQuantity = useCallback(async (cartItemId: string, quantity: number) => {
+    if (quantity <= 0) return removeItem(cartItemId);
+
+    if (isGuest) {
+      const updated = loadGuestCart().map(i =>
+        i.id === cartItemId ? { ...i, quantity } : i
+      );
+      saveGuestCart(updated);
+      setItems(updated);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('cart_items')
+      .update({ quantity })
+      .eq('id', cartItemId);
+
+    if (error) throw error;
+    setItems(prev => prev.map(i => i.id === cartItemId ? { ...i, quantity } : i));
+  }, [isGuest, removeItem]);
+
+  // ── Vaciar carrito ────────────────────────────────────────────
+  const clearCart = useCallback(async () => {
+    if (isGuest) {
+      localStorage.removeItem(GUEST_CART_KEY);
+      setItems([]);
+      return;
+    }
+
+    if (!cartId) return;
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('cart_id', cartId);
+
+    if (error) throw error;
+    setItems([]);
+  }, [isGuest, cartId]);
+
+  // ── Cálculos ──────────────────────────────────────────────────
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
-  const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  const tax = subtotal * 0.19;
-  const total = subtotal + tax;
+  const subtotal   = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0);
+  const tax        = 0;
+  const total      = subtotal;
 
   return (
-    <CartContext.Provider value={{ items, addItem, removeItem, updateQuantity, clearCart, isOpen, setIsOpen, totalItems, subtotal, tax, total }}>
+    <CartContext.Provider value={{
+      items,
+      isLoading,
+      isOpen,
+      setIsOpen,
+      addItem,
+      removeItem,
+      updateQuantity,
+      clearCart,
+      totalItems,
+      subtotal,
+      tax,
+      total,
+      isGuest,
+    }}>
       {children}
     </CartContext.Provider>
   );
@@ -60,6 +343,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useCart = () => {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used within CartProvider");
+  if (!ctx) throw new Error('useCart must be used within CartProvider');
   return ctx;
 };

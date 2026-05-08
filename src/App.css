@@ -40,3 +40,30 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Video background for hero/banner */
+.bg-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+}
+
+/* On small screens use a less aggressive layout to save bandwidth and avoid covering the whole viewport */
+@media (max-width: 640px) {
+  .bg-video {
+    position: absolute;
+    width: 100%;
+    height: 60vh;
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+/* Optional: hide native controls if any are shown */
+.bg-video::-webkit-media-controls {
+  display: none !important;
+}

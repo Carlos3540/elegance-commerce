@@ -137,6 +137,39 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    /* Cross-browser font smoothing */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* Prevent text size adjustment after orientation changes in iOS/Windows */
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+    /* Standardize tap highlight on mobile/touch screens */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Cross-browser Scrollbar Styling */
+  /* Firefox */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--muted-foreground) transparent;
+  }
+  
+  /* Chrome, Edge, Safari, Brave, Opera (Webkit) */
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--muted-foreground);
+    border-radius: 10px;
+    border: 2px solid var(--background);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--foreground);
   }
 
   h1, h2, h3, h4, h5, h6 {

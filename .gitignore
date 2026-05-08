@@ -22,3 +22,22 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Dependencias
+/node_modules
+
+# Variables de entorno
+.env
+.env.local
+.env.production
+
+# Otros
+dist
+build
+
+# Archivos multimedia y backups pesados
+*.zip
+*.mp4
+*.glb
+src/assets/Fotos mixology*/
+src/assets/Resolve Project Backups/
