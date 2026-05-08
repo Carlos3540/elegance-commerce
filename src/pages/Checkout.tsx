@@ -21,7 +21,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingCart, Package, Heart, Trash2, ArrowRight, X, ChevronDown, CheckCircle2, MapPin, Truck, Shield, AlertCircle, Loader2, Home, Building2, Briefcase, Warehouse, CreditCard, MessageCircle } from "lucide-react";
+import {
+  ShoppingBag, MapPin, User, Phone, Mail, FileText,
+  Home, Building2, Briefcase, Warehouse, ChevronDown,
+  Truck, CheckCircle2, AlertCircle, Loader2, ArrowLeft,
+  Shield, CreditCard, MessageCircle,
+} from 'lucide-react';
 import { BoldScriptButton } from '@/components/store/BoldScriptButton';
 import { useCart }          from '@/context/CartContext';
 import { useAuth }          from '@/context/AuthContext';
