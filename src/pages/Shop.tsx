@@ -362,8 +362,8 @@ const Shop = () => {
           ) : (
             <div style={{ 
               display: "grid", 
-              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", 
-              gap: "clamp(12px, 3vw, 24px)" 
+              gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))", 
+              gap: "clamp(10px, 3vw, 24px)" 
             }}>
               {filtered.map((product, i) => (
                 <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

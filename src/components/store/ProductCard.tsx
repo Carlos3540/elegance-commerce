@@ -141,8 +141,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
           whileHover={{ scale: 1.12 }}
           whileTap={{ scale: 0.9 }}
           style={{
-            position: "absolute", bottom: 12, right: 12,
-            width: 36, height: 36, borderRadius: "50%",
+            position: "absolute", bottom: 10, right: 10,
+            width: "clamp(32px, 8vw, 36px)", height: "clamp(32px, 8vw, 36px)", borderRadius: "50%",
             background: "rgba(255,255,255,0.92)",
             backdropFilter: "blur(8px)",
             border: "none", cursor: "pointer",
@@ -151,7 +151,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           }}
         >
           <Heart
-            size={16}
+            size={14}
             style={{
               fill: favorite ? "#ef4444" : "transparent",
               color: favorite ? "#ef4444" : "#555",
@@ -166,16 +166,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
             style={{
-              position: "absolute", bottom: 12, left: 12,
+              position: "absolute", bottom: 10, left: 10,
               background: "rgba(255,255,255,0.92)",
               backdropFilter: "blur(8px)",
-              borderRadius: 8, padding: "6px 12px",
-              display: "flex", alignItems: "center", gap: 5,
-              fontSize: 11, fontWeight: 700, color: "#111",
+              borderRadius: 8, padding: "6px 10px",
+              display: "flex", alignItems: "center", gap: 4,
+              fontSize: 10, fontWeight: 700, color: "#111",
               cursor: "pointer", letterSpacing: "0.03em",
             }}
           >
-            <Eye size={13} /> Ver
+            <Eye size={12} /> <span className="hidden sm:inline">Ver</span>
           </motion.div>
         </Link>
       </div>
@@ -243,18 +243,19 @@ const ProductCard = ({ product }: ProductCardProps) => {
             alignItems: "center",
             justifyContent: "center",
             gap: 7,
-            height: "clamp(38px, 10vw, 44px)",
+            height: "clamp(36px, 9vw, 42px)",
             background: "#111",
             color: "#fff",
             border: "none",
             borderRadius: 10,
-            fontSize: "clamp(10px, 2.5vw, 12px)",
+            fontSize: "clamp(9px, 2.5vw, 11px)",
             fontWeight: 800,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
             cursor: "pointer",
             transition: "all 0.2s",
-            textDecoration: "none"
+            textDecoration: "none",
+            marginTop: 8
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = "#333"; (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)"; }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = "#111"; (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)"; }}

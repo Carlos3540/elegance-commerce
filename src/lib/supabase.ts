@@ -135,6 +135,10 @@ export interface Order {
   shipping_address: Record<string, any>;
   shipping_method: string;
   tracking_number: string | null;
+  carrier: string | null;
+  tracking_url: string | null;
+  estimated_delivery: string | null;
+  cancellation_reason: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
   notes: string;
@@ -143,6 +147,7 @@ export interface Order {
   // joins
   order_items?: OrderItem[];
   profiles?: Pick<Profile, 'full_name' | 'email'>;
+  status_history?: OrderStatusHistory[];
 }
 
 export interface OrderItem {
@@ -156,6 +161,17 @@ export interface OrderItem {
   quantity: number;
   subtotal: number;
   created_at: string;
+}
+
+export interface OrderStatusHistory {
+  id: string;
+  order_id: string;
+  previous_status: string | null;
+  new_status: string;
+  changed_by: string | null;
+  changed_at: string;
+  notes: string | null;
+  profiles?: Pick<Profile, 'full_name' | 'email'>;
 }
 
 export type PaymentProvider = 'stripe' | 'mercadopago' | 'paypal' | 'transferencia' | 'efectivo' | 'bold' | 'otro';

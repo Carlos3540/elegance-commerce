@@ -128,6 +128,14 @@ const Configurador = () => {
       }}
     >
       {/* ── Top ticker ── */}
+      <style>{`
+        .cfg-hero-grid { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 40px; }
+        .cfg-cta-box { display: flex; flex-direction: row; justify-content: space-between; align-items: center; gap: 40px; }
+        @media (max-width: 768px) {
+          .cfg-hero-grid { grid-template-columns: 1fr; text-align: center; }
+          .cfg-cta-box { flex-direction: column; text-align: center; }
+        }
+      `}</style>
       <Ticker />
 
       {/* ── Hero con parallax ── */}
@@ -136,7 +144,7 @@ const Configurador = () => {
         style={{
           position: "relative",
           overflow: "hidden",
-          padding: "100px 0 56px",
+          padding: "clamp(60px, 15vh, 120px) 0 clamp(40px, 8vh, 80px)",
           background: "#111",
         }}
       >
@@ -360,7 +368,8 @@ const Configurador = () => {
             margin: "0 auto",
             padding: "22px 24px",
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+            gap: 16,
           }}
         >
           {FEATURES.map((f, i) => (
@@ -374,9 +383,8 @@ const Configurador = () => {
                 display: "flex",
                 alignItems: "center",
                 gap: 12,
-                padding: "0 16px",
-                borderRight:
-                  i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                padding: "12px 16px",
+                borderRight: window.innerWidth >= 1024 && i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
               }}
             >
               <div
@@ -482,8 +490,8 @@ const Configurador = () => {
             margin: "0 auto",
             padding: "0 24px",
             display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: 0,
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 32,
           }}
         >
           {[
@@ -502,7 +510,7 @@ const Configurador = () => {
                 textAlign: "center",
                 padding: "0 16px",
                 borderRight:
-                  i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                  window.innerWidth >= 1024 && i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
               }}
             >
               <p
@@ -539,20 +547,17 @@ const Configurador = () => {
         }}
       >
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <motion.div
+            <motion.div
+            className="cfg-cta-box"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             style={{
               background: "#0d0d0d",
               borderRadius: 24,
-              padding: "52px 48px",
+              padding: "clamp(30px, 8vw, 52px) clamp(20px, 5vw, 48px)",
               position: "relative",
               overflow: "hidden",
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
-              gap: 40,
-              alignItems: "center",
               border: "1px solid rgba(255,255,255,0.06)",
             }}
           >

@@ -3,9 +3,13 @@ import { supabase } from '../lib/supabase';
 
 export interface AdminStats {
   totalRevenue: number;
+  revenueToday: number;
   revenueThisMonth: number;
   revenueChange: number;
   totalOrders: number;
+  activeOrders: number;
+  deliveredToday: number;
+  pendingDispatch: number;
   ordersThisMonth: number;
   ordersChange: number;
   totalProducts: number;
@@ -41,6 +45,7 @@ export const useAdminStats = () => {
       setIsLoading(true);
 
       const now = new Date();
+      const startOfDay       = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
       const startOfMonth     = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
       const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
       const startOfYear      = new Date(now.getFullYear(), 0, 1).toISOString();
@@ -73,11 +78,20 @@ export const useAdminStats = () => {
       const lastMonthOrders = lastMonthOrdersRes.data || [];
       const products        = productsRes.data || [];
 
-      const totalRevenue     = allOrders.reduce((s, o) => s + Number(o.total), 0);
-      const revenueThisMonth = monthOrders.reduce((s, o) => s + Number(o.total), 0);
-      const revenueLastMonth = lastMonthOrders.reduce((s, o) => s + Number(o.total), 0);
+      // Filtros específicos
+      const deliveredOrShipped = allOrders.filter(o => ['shipped', 'delivered'].includes(o.status));
+      const ordersToday = allOrders.filter(o => o.created_at && o.created_at >= startOfDay);
+      
+      const totalRevenue     = deliveredOrShipped.reduce((s, o) => s + Number(o.total), 0);
+      const revenueToday     = ordersToday.filter(o => ['shipped', 'delivered'].includes(o.status)).reduce((s, o) => s + Number(o.total), 0);
+      const revenueThisMonth = monthOrders.filter(o => ['shipped', 'delivered'].includes(o.status)).reduce((s, o) => s + Number(o.total), 0);
+      const revenueLastMonth = lastMonthOrders.filter(o => ['shipped', 'delivered'].includes(o.status)).reduce((s, o) => s + Number(o.total), 0);
       const revenueChange    = revenueLastMonth > 0
         ? Math.round(((revenueThisMonth - revenueLastMonth) / revenueLastMonth) * 100) : 0;
+
+      const activeOrders     = allOrders.filter(o => ['processing', 'shipped'].includes(o.status)).length;
+      const deliveredToday   = ordersToday.filter(o => o.status === 'delivered').length;
+      const pendingDispatch  = allOrders.filter(o => o.status === 'processing').length;
 
       const ordersChange = lastMonthOrders.length > 0
         ? Math.round(((monthOrders.length - lastMonthOrders.length) / lastMonthOrders.length) * 100) : 0;
@@ -124,9 +138,13 @@ export const useAdminStats = () => {
 
       setStats({
         totalRevenue,
+        revenueToday,
         revenueThisMonth,
         revenueChange,
         totalOrders: allOrders.length,
+        activeOrders,
+        deliveredToday,
+        pendingDispatch,
         ordersThisMonth: monthOrders.length,
         ordersChange,
         totalProducts: products.length,

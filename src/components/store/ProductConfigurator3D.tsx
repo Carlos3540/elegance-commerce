@@ -831,9 +831,14 @@ const ProductConfigurator3D = ({ onAddToCart }: { onAddToCart?: (c: Record<strin
           border:1px solid rgba(255,255,255,0.15);
         }
         @media(max-width:820px){
-          .cfg-body{grid-template-columns:1fr;}
-          .cfg-canvas-col{min-height:380px!important; border-bottom:1px solid rgba(255,255,255,0.15);}
-          .cfg-panel{max-height:75vh;}
+          .cfg-body{grid-template-columns:1fr; min-height:auto;}
+          .cfg-canvas-col{min-height:clamp(400px, 60vh, 500px)!important; border-bottom:1px solid rgba(255,255,255,0.15); border-right:none !important;}
+          .cfg-panel{max-height:none;}
+        }
+        @media(max-width:480px){
+          .cfg-tabs-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+          .cfg-tabs-container::-webkit-scrollbar { display: none; }
+          .cfg-tab-btn { min-width: 80px; }
         }
         .cfg-scroll::-webkit-scrollbar{width:3px;}
         .cfg-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.07);border-radius:3px;}
@@ -986,9 +991,9 @@ const ProductConfigurator3D = ({ onAddToCart }: { onAddToCart?: (c: Record<strin
           {/* ── Panel ── */}
           <div className="cfg-panel" style={{ background: "#0a0a0a", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "0 0 0", borderBottom: "1px solid rgba(255,255,255,0.15)" }}>
-              <div style={{ display: "flex", gap: 1, marginBottom: -1 }}>
+              <div className="cfg-tabs-container" style={{ display: "flex", gap: 1, marginBottom: -1 }}>
                 {tabs.map((tab) => (
-                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{
+                  <button key={tab.id} onClick={() => setActiveTab(tab.id)} className="cfg-tab-btn" style={{
                     flex: 1, padding: "16px 4px",
                     background: activeTab === tab.id ? "#151515" : "transparent",
                     border: "none",
@@ -1095,6 +1100,7 @@ const ProductConfigurator3D = ({ onAddToCart }: { onAddToCart?: (c: Record<strin
                     </div>
 
                     <div style={{
+                      width: "100%", maxWidth: 340, margin: "0 auto",
                       aspectRatio: "340/420", borderRadius: 12, overflow: "hidden",
                       border: "1px solid rgba(255,255,255,0.07)", marginBottom: 12,
                       background: "rgba(255,255,255,0.02)", position: "relative",
