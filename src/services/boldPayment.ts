@@ -82,7 +82,8 @@ interface BoldCheckoutConfig {
   redirectionUrl:     string;
   description:        string;
   customerData?:      string;   // JSON.stringify({ email, fullName, phone, ... })
-  // NO se incluye renderMode: 'embedded' — usamos integración personalizada
+  renderMode?:        'embedded';
+  buttonStyle?:       'dark-L' | 'dark-M' | 'dark-S';
 }
 
 interface BoldCheckoutInstance {
@@ -387,9 +388,11 @@ export async function prepararCheckoutBold(params: BoldCheckoutParams): Promise<
     currency:           params.currency ?? 'COP',
     amount:             String(Math.round(params.amount)),
     apiKey,
-    integritySignature: params.integrityHash,  // ← CORRECTO según doc oficial
+    integritySignature: params.integrityHash,
     redirectionUrl:     params.redirectUrl,
     description:        `Pedido Evolet 96 — ${params.boldOrderId}`,
+    renderMode:         'embedded',
+    buttonStyle:        'dark-L',
     // customerData opcional — mejora la UX pre-llenando el formulario Bold
     ...(params.customerData && {
       customerData: JSON.stringify({

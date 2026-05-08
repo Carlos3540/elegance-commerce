@@ -53,26 +53,20 @@ async function generarFirmaBold(
   secret:   string
 ): Promise<string> {
   const amountInt = Math.round(amount);
+  // FÓRMULA OFICIAL BOLD: {OrderId}{Amount}{Currency}{SecretKey}
   const message   = `${orderId}${amountInt}${currency}${secret}`;
 
   const encoder   = new TextEncoder();
-  const cryptoKey = await crypto.subtle.importKey(
-    'raw',
-    encoder.encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-
-  const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(message));
-  const hashHex   = Array.from(new Uint8Array(signature))
+  const data      = encoder.encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  
+  const hashHex = Array.from(new Uint8Array(hashBuffer))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
 
-  // Loguear solo los primeros 8 chars — nunca el hash completo en logs
   console.log(
     `[sign] orderId=${orderId} | amount=${amountInt} ${currency} | ` +
-    `hash=${hashHex.slice(0, 8)}...`
+    `hash=${hashHex.slice(0, 8)}... (SHA-256)`
   );
 
   return hashHex;

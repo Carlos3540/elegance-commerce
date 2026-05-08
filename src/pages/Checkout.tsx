@@ -115,9 +115,27 @@ const Checkout: React.FC = () => {
 
   // ── Redireccionamiento ─────────────────────────────────────────
   useEffect(() => {
-    if (!user)              { navigate('/');      return; }
-    if (items.length === 0) { navigate('/tienda'); }
-  }, [user, items, navigate]);
+    if (!isLoading) {
+      if (!user) {
+        navigate('/');
+        return;
+      }
+      if (items.length === 0) {
+        navigate('/tienda');
+      }
+    }
+  }, [user, items, navigate, isLoading]);
+
+  // Si la sesión está cargando, mostramos un spinner para no expulsar al usuario
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-10 h-10 text-gray-900 animate-spin mb-4" />
+        <h2 className="text-xl font-bold text-gray-900">Cargando tu sesión...</h2>
+        <p className="text-gray-500 text-sm mt-2">Estamos preparando todo para tu compra.</p>
+      </div>
+    );
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // handlePrepararBold — carga SDK + pide firma + crea instancia Bold
