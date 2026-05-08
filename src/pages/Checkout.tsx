@@ -66,7 +66,7 @@ const PROPERTY_TYPES = [
 
 const Checkout: React.FC = () => {
   const navigate          = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, isLoading } = useAuth();
   const { items, subtotal } = useCart();
 
   // ── Refs ───────────────────────────────────────────────────────
