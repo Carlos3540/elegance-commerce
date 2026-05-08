@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
+import waLogo from "@/assets/whatsapp-logo.png";
 
 const PHONE = "573134620799";
 const MESSAGE = "Hola, me gustaría obtener más información sobre sus productos 😊";
@@ -24,7 +25,7 @@ const WhatsAppButton = () => {
         style={{ width: 66, height: 66, borderRadius: "50%", background: "linear-gradient(135deg,#25D366,#128C7E)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(37,211,102,0.45)", cursor: "pointer", textDecoration: "none", flexShrink: 0, position: "relative" }}
       >
         <img
-            src="/src/assets/whatsapp-logo.png"
+            src={waLogo}
             alt="WhatsApp"
             style={{ width: 42, height: 42, objectFit: "contain" }}
         />

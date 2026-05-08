@@ -38,9 +38,9 @@ const fetchUSDtoCOP = async (): Promise<number> => {
 // ── Detecta país por IP ───────────────────────────────────────
 const detectCountry = async (): Promise<string> => {
   try {
-    const res  = await fetch("https://ipapi.co/json/");
+    const res  = await fetch("https://get.geojs.io/v1/ip/country.json");
     const data = await res.json();
-    return data.country_code || "US";
+    return data.country || "US";
   } catch {
     return "US";
   }
