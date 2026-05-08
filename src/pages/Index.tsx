@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, RotateCcw, Star, TrendingUp, Shield, Truck, RefreshCw, Instagram } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
-import bannerVideo from "@/assets/banner7.2.mp4";
+const bannerVideo = "https://aioiaitkycmypvdialek.supabase.co/storage/v1/object/public/assets/banner7.2.mp4";
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import collectionEveryday from "@/assets/collection-everyday.jpg";

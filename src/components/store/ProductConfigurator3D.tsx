@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 
 // ─── Config ──────────────────────────────────────────────
-const MODEL_PATH = "/models/hoodie/HUDIJS PA DETALJAM.glb";
+const MODEL_PATH = "https://aioiaitkycmypvdialek.supabase.co/storage/v1/object/public/assets/HUDIJS%20PA%20DETALJAM.glb";
 useGLTF.preload(MODEL_PATH);
 
 /** Nombre exacto del mesh body en el GLB */
