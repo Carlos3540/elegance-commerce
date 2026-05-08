@@ -1,4 +1,5 @@
 import { useState } from "react";
+import sideImage from "@/assets/forminicio.png";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
@@ -7,7 +8,7 @@ import { Mail, Eye, EyeOff, User, Calendar, Instagram, ArrowRight, ShieldCheck }
 import { Checkbox } from "@/components/ui/checkbox";
 
 // ─── REEMPLAZA ESTA URL CON TU IMAGEN ───────────────────────────────────────
-const SIDE_IMAGE_URL = "/src/assets/forminicio.png";
+const SIDE_IMAGE_URL = sideImage;
 // ────────────────────────────────────────────────────────────────────────────
 
 interface LoginDialogProps {
