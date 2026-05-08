@@ -130,25 +130,25 @@ const INFO_ITEMS = [
   {
     icon: MapPin,
     title: "Dirección",
-    lines: ["Calle 123 #45-67", "Bogotá, Colombia"],
+    lines: ["Casa Balsa", "Calle 106 # 17 - 17", "Bogotá, Colombia"],
     accent: "#C4395A",
   },
   {
     icon: Phone,
     title: "Teléfono",
-    lines: ["+57 1 234 5678", "+57 300 123 4567"],
+    lines: ["+57 313 462 0799"],
     accent: "#7c3aed",
   },
   {
     icon: Mail,
     title: "Correo",
-    lines: ["soporte@evolet96.com"],
+    lines: ["contactoevolet.96@gmail.com"],
     accent: "#2563eb",
   },
   {
     icon: Clock,
     title: "Horario",
-    lines: ["Lun–Vie: 8AM – 6PM", "Sáb: 9AM – 2PM"],
+    lines: ["Lun–Dom: 12PM – 8PM"],
     accent: "#C4395A",
   },
 ];
@@ -346,7 +346,7 @@ const Contact = () => {
             {/* Map */}
             <div style={{ borderRadius: 24, overflow: "hidden", border: "1px solid #ebebeb", flex: 1, minHeight: 340 }}>
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3976.8!2d-74.06!3d4.65!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNMKwMzknMDAuMCJOIDc0wrAwMycwMC4wIlc!5e0!3m2!1ses!2sco!4v1234567890"
+                src="https://maps.google.com/maps?width=100%25&height=600&hl=es&q=Calle%20106%20%23%2017%20-%2017,%20Bogot%C3%A1,%20Colombia+(Evolet%2096)&t=&z=16&ie=UTF8&iwloc=B&output=embed"
                 width="100%"
                 height="100%"
                 style={{ minHeight: 340, border: 0, display: "block", filter: "grayscale(20%) contrast(1.05)" }}
@@ -387,7 +387,7 @@ const Contact = () => {
                 </p>
               </div>
               <motion.a
-                href="https://wa.me/573001234567"
+                href="https://wa.me/573134620799?text=Hola,%20quisiera%20m%C3%A1s%20informaci%C3%B3n"
                 target="_blank"
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.04 }}

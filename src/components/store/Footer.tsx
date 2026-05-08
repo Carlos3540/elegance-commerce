@@ -306,16 +306,16 @@ const Footer = () => {
             <p style={{
               fontSize: 9, fontWeight: 900, letterSpacing: "0.26em",
               color: "#C4395A", fontFamily: "'DM Sans', sans-serif",
-              textTransform: "uppercase", marginBottom: 20,
+                  textTransform: "uppercase", marginBottom: 20,
             }}>
               Contacto
             </p>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
-                { icon: <MapPin size={14} />, text: "Calle 123 #45-67, Bogotá" },
-                { icon: <Phone size={14} />, text: "+57 1 234 5678" },
-                { icon: <Mail size={14} />, text: "soporte@evolet96.com" },
+                { icon: <MapPin size={14} />, text: "Casa Balsa, Calle 106 # 17 - 17, Bogotá" },
+                { icon: <Phone size={14} />, text: "+57 313 462 0799" },
+                { icon: <Mail size={14} />, text: "contactoevolet.96@gmail.com" },
               ].map((item, i) => (
                 <motion.div
                   key={i}

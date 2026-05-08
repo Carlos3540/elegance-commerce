@@ -39,9 +39,6 @@ export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
     script.setAttribute('data-redirection-url', redirectionUrl);
     script.setAttribute('data-render-mode', 'embedded');
     
-    // Opcional: Para evitar advertencias de CORS al cargar el script
-    script.crossOrigin = 'anonymous';
-
     // Insertar el script en el contenedor
     containerRef.current.appendChild(script);
 
