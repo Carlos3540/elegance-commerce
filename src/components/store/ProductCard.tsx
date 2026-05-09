@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/hooks/useCurrency";
-
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Review {
@@ -43,7 +42,6 @@ const StarRating = ({ rating, size = 12 }: { rating: number; size?: number }) =>
   </div>
 );
 
-// Mock reviews for demo — en producción vendrían de Supabase
 const MOCK_REVIEWS: Review[] = [
   { id: "1", author: "María G.", rating: 5, comment: "Increíble calidad, el tela es suave y el corte queda perfecto. Lo recomiendo totalmente.", date: "hace 2 días" },
   { id: "2", author: "Laura M.", rating: 4, comment: "Muy bonito, el color es exactamente como en la foto. Talla un poco grande.", date: "hace 1 semana" },
@@ -84,120 +82,238 @@ const ProductCard = ({ product }: ProductCardProps) => {
     ? Math.round(((product.compare_price! - product.price) / product.compare_price!) * 100)
     : 0;
 
+  // ── Responsive tokens ──────────────────────────────────────────────────────
+  // Using a single source of truth so every measurement is consistent.
+  const r = isMobile
+    ? {
+        // image
+        imageRadius: 12,
+        imageMarginBottom: 10,
+        // badges
+        badgeTop: 8, badgeLeft: 8, badgeRight: 8,
+        badgeFontSize: 9, badgePadding: "2px 6px",
+        // fav button
+        favSize: 32, favIconSize: 13,
+        // overlay button
+        overlayBottom: 8, overlayLeft: 8,
+        overlayPadding: "4px 8px", overlayFontSize: 9,
+        // info
+        infoLeft: 0,
+        starSize: 10, ratingFont: 10,
+        nameFont: "13px", nameHeight: "2.6em",
+        priceFont: "14px",
+        comparePriceFont: 10,
+        sizeFont: 9, maxSizes: 3,
+        ctaHeight: 36, ctaFont: 10,
+        ctaIconSize: 12,
+        // reviews panel
+        reviewPadding: "12px",
+        reviewMarginTop: 10,
+        reviewBigFont: 20,
+        reviewStarSize: 12,
+        reviewMetaFont: 10,
+        reviewLinkFont: 10,
+        reviewAvatarSize: 24, reviewAvatarFont: 10,
+        reviewAuthorFont: 11, reviewCommentFont: 11,
+        reviewGap: 10,
+        reviewItemPadding: 10,
+      }
+    : {
+        imageRadius: 16,
+        imageMarginBottom: 14,
+        badgeTop: 12, badgeLeft: 12, badgeRight: 12,
+        badgeFontSize: 10, badgePadding: "3px 8px",
+        favSize: 36, favIconSize: 14,
+        overlayBottom: 10, overlayLeft: 10,
+        overlayPadding: "6px 10px", overlayFontSize: 10,
+        infoLeft: 2,
+        starSize: 12, ratingFont: 11,
+        nameFont: "clamp(13px, 3.5vw, 14px)", nameHeight: "2.7em",
+        priceFont: "clamp(14px, 4vw, 16px)",
+        comparePriceFont: 12,
+        sizeFont: 9, maxSizes: 5,
+        ctaHeight: 42, ctaFont: 11,
+        ctaIconSize: 14,
+        reviewPadding: "16px",
+        reviewMarginTop: 14,
+        reviewBigFont: 26,
+        reviewStarSize: 14,
+        reviewMetaFont: 11,
+        reviewLinkFont: 11,
+        reviewAvatarSize: 28, reviewAvatarFont: 11,
+        reviewAuthorFont: 12, reviewCommentFont: 12,
+        reviewGap: 12,
+        reviewItemPadding: 12,
+      };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
-      style={{ 
-        fontFamily: "'DM Sans', sans-serif", 
+      style={{
+        fontFamily: "'DM Sans', sans-serif",
         position: "relative",
         height: "100%",
         display: "flex",
-        flexDirection: "column"
+        flexDirection: "column",
+        // Ensure the card never overflows its grid cell on mobile
+        minWidth: 0,
+        width: "100%",
       }}
     >
-      {/* ── Imagen ── */}
-      <div style={{ 
-        position: "relative", 
-        overflow: "hidden", 
-        borderRadius: isMobile ? 12 : 16, 
-        marginBottom: isMobile ? 10 : 14, 
-        background: "#f5f4f2",
-        aspectRatio: "3/4"
-      }}>
+      {/* ── Imagen ─────────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          borderRadius: r.imageRadius,
+          marginBottom: r.imageMarginBottom,
+          background: "#f5f4f2",
+          aspectRatio: "3/4",
+          // Prevent image from breaking layout on very small screens
+          width: "100%",
+        }}
+      >
         <Link to={`/producto/${product.slug}`}>
           <motion.img
             src={product.image_url || "/assets/placeholder.svg"}
             alt={product.name}
             whileHover={!isMobile ? { scale: 1.06 } : {}}
             transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
-            style={{ 
-              width: "100%", 
+            style={{
+              width: "100%",
               height: "100%",
-              objectFit: "cover", 
+              objectFit: "cover",
               display: "block",
             }}
           />
         </Link>
 
-        {/* Badges */}
-        <div style={{ position: "absolute", top: isMobile ? 8 : 12, left: isMobile ? 8 : 12, display: "flex", flexDirection: "column", gap: 4 }}>
+        {/* Badges ── left column */}
+        <div
+          style={{
+            position: "absolute",
+            top: r.badgeTop,
+            left: r.badgeLeft,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}
+        >
           {hasDiscount && (
-            <span style={{ 
-              background: "#bb3838", 
-              color: "#fff", 
-              fontSize: isMobile ? 9 : 10, 
-              fontWeight: 800, 
-              padding: isMobile ? "2px 6px" : "3px 8px", 
-              borderRadius: 4, 
-              letterSpacing: "0.06em", 
-              textTransform: "uppercase" 
-            }}>
+            <span
+              style={{
+                background: "#bb3838",
+                color: "#fff",
+                fontSize: r.badgeFontSize,
+                fontWeight: 800,
+                padding: r.badgePadding,
+                borderRadius: 4,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
               -{discountPct}%
             </span>
           )}
           {product.is_featured && (
-            <span style={{ 
-              background: "#111", 
-              color: "#fff", 
-              fontSize: isMobile ? 9 : 10, 
-              fontWeight: 800, 
-              padding: isMobile ? "2px 6px" : "3px 8px", 
-              borderRadius: 4, 
-              letterSpacing: "0.06em", 
-              textTransform: "uppercase" 
-            }}>
+            <span
+              style={{
+                background: "#111",
+                color: "#fff",
+                fontSize: r.badgeFontSize,
+                fontWeight: 800,
+                padding: r.badgePadding,
+                borderRadius: 4,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+                whiteSpace: "nowrap",
+              }}
+            >
               Nuevo
             </span>
           )}
         </div>
 
-        {/* Stock badge */}
+        {/* Stock badge ── right-top */}
         {product.stock > 0 && product.stock <= product.low_stock_threshold && (
-          <span style={{ 
-            position: "absolute", 
-            top: isMobile ? 8 : 12, 
-            right: isMobile ? 8 : 12, 
-            background: "#f97316", 
-            color: "#fff", 
-            fontSize: isMobile ? 9 : 10, 
-            fontWeight: 800, 
-            padding: isMobile ? "2px 6px" : "3px 8px", 
-            borderRadius: 4, 
-            textTransform: "uppercase" 
-          }}>
+          <span
+            style={{
+              position: "absolute",
+              top: r.badgeTop,
+              right: r.badgeRight,
+              background: "#f97316",
+              color: "#fff",
+              fontSize: r.badgeFontSize,
+              fontWeight: 800,
+              padding: r.badgePadding,
+              borderRadius: 4,
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
             Últimas {product.stock}
           </span>
         )}
 
         {/* Agotado overlay */}
         {product.stock === 0 && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: isMobile ? 12 : 16 }}>
-            <span style={{ color: "#fff", fontSize: isMobile ? 10 : 11, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase" }}>Agotado</span>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: r.imageRadius,
+            }}
+          >
+            <span
+              style={{
+                color: "#fff",
+                fontSize: r.badgeFontSize,
+                fontWeight: 800,
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+              }}
+            >
+              Agotado
+            </span>
           </div>
         )}
 
-        {/* Favorito */}
+        {/* Favorito ── right-bottom */}
         <motion.button
           onClick={handleToggleFavorite}
           whileHover={!isMobile ? { scale: 1.12 } : {}}
           whileTap={{ scale: 0.9 }}
           style={{
-            position: "absolute", bottom: isMobile ? 8 : 10, right: isMobile ? 8 : 10,
-            width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, 
+            position: "absolute",
+            bottom: r.overlayBottom,
+            right: r.badgeRight,
+            width: r.favSize,
+            height: r.favSize,
             borderRadius: "50%",
             background: "rgba(255,255,255,0.92)",
             backdropFilter: "blur(8px)",
-            border: "none", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
+            border: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             boxShadow: "0 2px 12px rgba(0,0,0,0.12)",
-            zIndex: 10
+            zIndex: 10,
+            // Prevent button from getting too small via touch target
+            minWidth: 32,
+            minHeight: 32,
           }}
         >
           <Heart
-            size={isMobile ? 13 : 14}
+            size={r.favIconSize}
             style={{
               fill: favorite ? "#ef4444" : "transparent",
               color: favorite ? "#ef4444" : "#555",
@@ -206,112 +322,190 @@ const ProductCard = ({ product }: ProductCardProps) => {
           />
         </motion.button>
 
-        {/* Ver producto */}
+        {/* Ver producto ── left-bottom */}
         <Link to={`/producto/${product.slug}`}>
           <motion.div
             initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             whileHover={!isMobile ? { opacity: 1, y: 0 } : {}}
             style={{
-              position: "absolute", bottom: isMobile ? 8 : 10, left: isMobile ? 8 : 10,
-              background: isMobile ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.92)",
+              position: "absolute",
+              bottom: r.overlayBottom,
+              left: r.overlayLeft,
+              background: "rgba(255,255,255,0.92)",
               backdropFilter: "blur(8px)",
-              borderRadius: 6, 
-              padding: isMobile ? "4px 8px" : "6px 10px",
-              display: "flex", alignItems: "center", gap: 4,
-              fontSize: isMobile ? 9 : 10, 
-              fontWeight: 700, color: "#111",
-              cursor: "pointer", letterSpacing: "0.03em",
-              boxShadow: isMobile ? "0 2px 8px rgba(0,0,0,0.1)" : "none"
+              borderRadius: 6,
+              padding: r.overlayPadding,
+              display: "flex",
+              alignItems: "center",
+              gap: 4,
+              fontSize: r.overlayFontSize,
+              fontWeight: 700,
+              color: "#111",
+              cursor: "pointer",
+              letterSpacing: "0.03em",
+              boxShadow: isMobile ? "0 2px 8px rgba(0,0,0,0.1)" : "none",
+              // Keep pill within image even on very small cards
+              maxWidth: "calc(100% - 60px)",
+              overflow: "hidden",
+              whiteSpace: "nowrap",
             }}
           >
-            <Eye size={isMobile ? 11 : 12} /> <span>Ver</span>
+            <Eye size={isMobile ? 11 : 12} style={{ flexShrink: 0 }} />
+            <span>Ver</span>
           </motion.div>
         </Link>
       </div>
 
-      {/* ── Info ── */}
-      <div style={{ paddingLeft: isMobile ? 0 : 2, display: "flex", flexDirection: "column", flex: 1 }}>
-
+      {/* ── Info ───────────────────────────────────────────────────────────── */}
+      <div
+        style={{
+          paddingLeft: r.infoLeft,
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          // Prevent any child from stretching outside card width
+          minWidth: 0,
+        }}
+      >
         {/* Rating */}
         <button
           onClick={() => setShowReviews(v => !v)}
-          style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", padding: 0, marginBottom: isMobile ? 4 : 6 }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            marginBottom: isMobile ? 4 : 6,
+            // Ensure text doesn't overflow
+            minWidth: 0,
+            overflow: "hidden",
+          }}
         >
-          <StarRating rating={avgRating} size={isMobile ? 10 : 12} />
-          <span style={{ fontSize: isMobile ? 10 : 11, color: "#9ca3af", fontWeight: 600 }}>
+          <StarRating rating={avgRating} size={r.starSize} />
+          <span
+            style={{
+              fontSize: r.ratingFont,
+              color: "#9ca3af",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
             {avgRating.toFixed(1)} ({reviewCount})
           </span>
         </button>
 
         {/* Nombre */}
         <Link to={`/producto/${product.slug}`} style={{ textDecoration: "none" }}>
-          <h3 style={{ 
-            fontSize: isMobile ? "13px" : "clamp(13px, 3.5vw, 14px)", 
-            fontWeight: 600, 
-            color: "#111", 
-            marginBottom: isMobile ? 4 : 6, 
-            lineHeight: 1.3, 
-            letterSpacing: "-0.01em",
-            display: "-webkit-box",
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: "vertical",
-            overflow: "hidden",
-            height: isMobile ? "2.6em" : "2.7em"
-          }}>
+          <h3
+            style={{
+              fontSize: r.nameFont,
+              fontWeight: 600,
+              color: "#111",
+              marginBottom: isMobile ? 4 : 6,
+              lineHeight: 1.3,
+              letterSpacing: "-0.01em",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
+              overflow: "hidden",
+              height: r.nameHeight,
+              // Clip long words on tiny cards
+              wordBreak: "break-word",
+            }}
+          >
             {product.name}
           </h3>
         </Link>
 
         {/* Precio */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: isMobile ? 8 : 12 }}>
-          <span style={{ fontSize: isMobile ? "14px" : "clamp(14px, 4vw, 16px)", fontWeight: 800, color: "#111" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            marginBottom: isMobile ? 8 : 12,
+            flexWrap: "wrap",
+          }}
+        >
+          <span
+            style={{
+              fontSize: r.priceFont,
+              fontWeight: 800,
+              color: "#111",
+              whiteSpace: "nowrap",
+            }}
+          >
             {format(product.price)}
           </span>
           {hasDiscount && (
-            <span style={{ fontSize: isMobile ? 10 : 12, color: "#9ca3af", textDecoration: "line-through" }}>
+            <span
+              style={{
+                fontSize: r.comparePriceFont,
+                color: "#9ca3af",
+                textDecoration: "line-through",
+                whiteSpace: "nowrap",
+              }}
+            >
               {format(product.compare_price!)}
             </span>
           )}
         </div>
 
-        {/* Tallas disponibles - Ocultar en móvil para ahorrar espacio si es necesario o simplificar */}
+        {/* Tallas */}
         {product.metadata?.sizes?.length > 0 && (
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginBottom: isMobile ? 10 : 12 }}>
-            {product.metadata.sizes.slice(0, isMobile ? 3 : 5).map((s: string) => (
-              <span key={s} style={{ 
-                fontSize: 9, 
-                fontWeight: 700, 
-                color: "#555", 
-                border: "1px solid #e5e7eb", 
-                borderRadius: 4, 
-                padding: "1px 6px", 
-                letterSpacing: "0.04em" 
-              }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 4,
+              flexWrap: "wrap",
+              marginBottom: isMobile ? 10 : 12,
+            }}
+          >
+            {product.metadata.sizes.slice(0, r.maxSizes).map((s: string) => (
+              <span
+                key={s}
+                style={{
+                  fontSize: r.sizeFont,
+                  fontWeight: 700,
+                  color: "#555",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 4,
+                  padding: "1px 6px",
+                  letterSpacing: "0.04em",
+                  whiteSpace: "nowrap",
+                }}
+              >
                 {s}
               </span>
             ))}
             {isMobile && product.metadata.sizes.length > 3 && (
-              <span style={{ fontSize: 9, color: "#999", alignSelf: "center" }}>+</span>
+              <span style={{ fontSize: r.sizeFont, color: "#999", alignSelf: "center" }}>
+                +{product.metadata.sizes.length - 3}
+              </span>
             )}
           </div>
         )}
 
-        {/* Spacer to push button down */}
+        {/* Push CTA to bottom */}
         <div style={{ flex: 1 }} />
 
-        <Link 
+        {/* CTA */}
+        <Link
           to={`/producto/${product.slug}`}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 6,
-            height: isMobile ? 36 : 42,
+            height: r.ctaHeight,
             background: "#111",
             color: "#fff",
             border: "none",
             borderRadius: 8,
-            fontSize: isMobile ? 10 : 11,
+            fontSize: r.ctaFont,
             fontWeight: 800,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
@@ -319,17 +513,30 @@ const ProductCard = ({ product }: ProductCardProps) => {
             transition: "all 0.2s",
             textDecoration: "none",
             marginTop: isMobile ? 4 : 8,
-            width: "100%"
+            width: "100%",
+            // Prevent button from shrinking below readable size
+            minHeight: 36,
+            boxSizing: "border-box",
           }}
-          onMouseEnter={e => { if (!isMobile) { (e.currentTarget as HTMLAnchorElement).style.background = "#333"; (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)"; } }}
-          onMouseLeave={e => { if (!isMobile) { (e.currentTarget as HTMLAnchorElement).style.background = "#111"; (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)"; } }}
+          onMouseEnter={e => {
+            if (!isMobile) {
+              (e.currentTarget as HTMLAnchorElement).style.background = "#333";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+            }
+          }}
+          onMouseLeave={e => {
+            if (!isMobile) {
+              (e.currentTarget as HTMLAnchorElement).style.background = "#111";
+              (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(0)";
+            }
+          }}
         >
-          <Eye size={isMobile ? 12 : 14} />
+          <Eye size={r.ctaIconSize} />
           {isMobile ? "Ver" : "Detalles"}
         </Link>
       </div>
 
-      {/* ── Panel de reseñas ── */}
+      {/* ── Panel de reseñas ───────────────────────────────────────────────── */}
       <AnimatePresence>
         {showReviews && (
           <motion.div
@@ -339,62 +546,130 @@ const ProductCard = ({ product }: ProductCardProps) => {
             transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
             style={{ overflow: "hidden" }}
           >
-            <div style={{ 
-              marginTop: isMobile ? 10 : 14, 
-              padding: isMobile ? "12px" : "16px", 
-              background: "#fafafa", 
-              borderRadius: 12, 
-              border: "1px solid #f0f0f0" 
-            }}>
-
-              {/* Header reseñas */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isMobile ? 10 : 14 }}>
+            <div
+              style={{
+                marginTop: r.reviewMarginTop,
+                padding: r.reviewPadding,
+                background: "#fafafa",
+                borderRadius: 12,
+                border: "1px solid #f0f0f0",
+              }}
+            >
+              {/* Header */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  marginBottom: isMobile ? 10 : 14,
+                  gap: 8,
+                }}
+              >
                 <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 8 }}>
-                  <span style={{ fontSize: isMobile ? 20 : 26, fontWeight: 900, color: "#111", letterSpacing: "-0.04em" }}>
+                  <span
+                    style={{
+                      fontSize: r.reviewBigFont,
+                      fontWeight: 900,
+                      color: "#111",
+                      letterSpacing: "-0.04em",
+                    }}
+                  >
                     {avgRating.toFixed(1)}
                   </span>
                   <div>
-                    <StarRating rating={avgRating} size={isMobile ? 12 : 14} />
-                    <span style={{ fontSize: isMobile ? 10 : 11, color: "#9ca3af", marginTop: 2, display: "block" }}>
+                    <StarRating rating={avgRating} size={r.reviewStarSize} />
+                    <span
+                      style={{
+                        fontSize: r.reviewMetaFont,
+                        color: "#9ca3af",
+                        marginTop: 2,
+                        display: "block",
+                      }}
+                    >
                       {reviewCount} reseñas
                     </span>
                   </div>
                 </div>
                 <Link
                   to={`/producto/${product.slug}#reviews`}
-                  style={{ fontSize: isMobile ? 10 : 11, fontWeight: 700, color: "#111", textDecoration: "underline", letterSpacing: "0.03em" }}
+                  style={{
+                    fontSize: r.reviewLinkFont,
+                    fontWeight: 700,
+                    color: "#111",
+                    textDecoration: "underline",
+                    letterSpacing: "0.03em",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   Ver todas →
                 </Link>
               </div>
 
-              {/* Lista de reseñas */}
-              <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 10 : 12 }}>
+              {/* Lista */}
+              <div style={{ display: "flex", flexDirection: "column", gap: r.reviewGap }}>
                 {reviews.slice(0, 2).map(review => (
-                  <div key={review.id} style={{ paddingBottom: isMobile ? 10 : 12, borderBottom: "1px solid #ebebeb" }}>
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <div style={{ 
-                          width: isMobile ? 24 : 28, 
-                          height: isMobile ? 24 : 28, 
-                          borderRadius: "50%", 
-                          background: "#111", 
-                          display: "flex", 
-                          alignItems: "center", 
-                          justifyContent: "center", 
-                          color: "#fff", 
-                          fontSize: isMobile ? 10 : 11, 
-                          fontWeight: 800, 
-                          flexShrink: 0 
-                        }}>
+                  <div
+                    key={review.id}
+                    style={{
+                      paddingBottom: r.reviewItemPadding,
+                      borderBottom: "1px solid #ebebeb",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 4,
+                        gap: 6,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: r.reviewAvatarSize,
+                            height: r.reviewAvatarSize,
+                            borderRadius: "50%",
+                            background: "#111",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "#fff",
+                            fontSize: r.reviewAvatarFont,
+                            fontWeight: 800,
+                            flexShrink: 0,
+                          }}
+                        >
                           {review.author[0]}
                         </div>
-                        <span style={{ fontSize: isMobile ? 11 : 12, fontWeight: 700, color: "#111" }}>{review.author}</span>
+                        <span
+                          style={{
+                            fontSize: r.reviewAuthorFont,
+                            fontWeight: 700,
+                            color: "#111",
+                            overflow: "hidden",
+                            whiteSpace: "nowrap",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {review.author}
+                        </span>
                       </div>
-                      <span style={{ fontSize: 9, color: "#bbb" }}>{review.date}</span>
+                      <span style={{ fontSize: 9, color: "#bbb", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {review.date}
+                      </span>
                     </div>
                     <StarRating rating={review.rating} size={isMobile ? 10 : 11} />
-                    <p style={{ fontSize: isMobile ? 11 : 12, color: "#555", lineHeight: 1.4, marginTop: 4 }}>
+                    <p
+                      style={{
+                        fontSize: r.reviewCommentFont,
+                        color: "#555",
+                        lineHeight: 1.4,
+                        marginTop: 4,
+                        // Avoid line overflow on narrow cards
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {review.comment}
                     </p>
                   </div>
