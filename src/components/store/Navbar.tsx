@@ -1,6 +1,6 @@
 // src/components/store/Navbar.tsx
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { ShoppingCart, Heart, Menu, X, Search, ArrowRight } from "lucide-react";
+import { ShoppingCart, Heart, Menu, X, Search, ArrowRight, LogOut, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -145,7 +145,7 @@ const AuthGateModal = ({ open, onClose }: { open: boolean; onClose: () => void }
 /* ══════════════════════ NAVBAR ══════════════════════════════════ */
 const Navbar = () => {
   const { totalItems, setIsOpen } = useCart();
-  const { user }                  = useAuth();
+  const { user, signOut }         = useAuth();
   const { favorites }             = useFavorites();
   const location                  = useLocation();
   const navigate                  = useNavigate();
@@ -418,10 +418,16 @@ const Navbar = () => {
                     Favoritos
                   </button>
                   {user ? (
-                    <button type="button" onClick={() => { setMobileOpen(false); navigate("/perfil"); }}
-                      style={{ flex: "1 1 100%", padding: "16px 0", borderRadius: "0", border: "none", background: "#000000", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                      Mi perfil
-                    </button>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, width: "100%" }}>
+                      <button type="button" onClick={() => { setMobileOpen(false); navigate("/perfil"); }}
+                        style={{ width: "100%", padding: "16px 0", borderRadius: "12px", border: "none", background: "#000000", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <User size={14} /> Mi perfil
+                      </button>
+                      <button type="button" onClick={() => { setMobileOpen(false); signOut(); }}
+                        style={{ width: "100%", padding: "14px 0", borderRadius: "12px", border: "1.5px solid #ef4444", background: "transparent", cursor: "pointer", fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                        <LogOut size={14} /> Cerrar Sesión
+                      </button>
+                    </div>
                   ) : (
                     <button type="button" onClick={() => { setMobileOpen(false); setLoginOpen(true); }}
                       style={{ flex: "1 1 100%", padding: "16px 0", borderRadius: "0", border: "none", background: "#000000", cursor: "pointer", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif", color: "#FFFFFF", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
