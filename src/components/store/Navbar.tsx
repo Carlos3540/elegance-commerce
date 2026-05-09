@@ -246,20 +246,23 @@ const Navbar = () => {
               justifyContent: "flex-start",
             }}>
               <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-                <img
-                  src={logoImg}
-                  alt="EVOLET"
-                  style={{
-                    height: logoHeight,
-                    width: "auto",
-                    transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
-                    filter: isTransparent ? "brightness(0) invert(1)" : "none",
-                    objectFit: "contain",
-                    maxWidth: "300px",
-                    imageRendering: "crisp-edges",
-                    transform: "translateZ(0)"
-                  }}
-                />
+                  <img
+                    src={logoImg}
+                    alt="EVOLET"
+                    fetchpriority="high"
+                    loading="eager"
+                    style={{
+                      height: logoHeight,
+                      width: "auto",
+                      transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
+                      filter: isTransparent ? "brightness(0) invert(1)" : "none",
+                      padding: "4px 0",
+                      objectFit: "contain",
+                      maxWidth: "300px",
+                      imageRendering: "crisp-edges",
+                      transform: "translateZ(0)"
+                    }}
+                  />
               </Link>
             </div>
 

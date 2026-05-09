@@ -4,6 +4,8 @@ import { motion, useScroll, useTransform, useInView, AnimatePresence } from "fra
 import { ArrowRight, Sparkles, RotateCcw, Star, TrendingUp, Shield, Truck, RefreshCw, Instagram } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 const bannerVideo = "https://aioiaitkycmypvdialek.supabase.co/storage/v1/object/public/assets/banner7.2.mp4";
+const bannerPoster = "https://aioiaitkycmypvdialek.supabase.co/storage/v1/object/public/assets/banner-poster.jpg"; // Nuevo: Imagen de respaldo para LCP rápido
+
 import categoryWomen from "@/assets/category-women.jpg";
 import categoryMen from "@/assets/category-men.jpg";
 import collectionEveryday from "@/assets/collection-everyday.jpg";
@@ -58,7 +60,15 @@ const ParallaxHero = () => {
   return (
     <section ref={ref} style={{ position: "relative", height: isMobile ? "100svh" : "92vh", overflow: "hidden" }}>
       <motion.div style={{ y, position: "absolute", inset: 0 }}>
-        <video autoPlay muted loop playsInline style={{ width: "100%", height: "115%", objectFit: "cover", filter: "brightness(0.82) contrast(1.12) saturate(1.1)" }}>
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline 
+          poster={bannerPoster}
+          preload="auto"
+          style={{ width: "100%", height: "115%", objectFit: "cover", filter: "brightness(0.82) contrast(1.12) saturate(1.1)" }}
+        >
           <source src={bannerVideo} type="video/mp4" />
         </video>
       </motion.div>
