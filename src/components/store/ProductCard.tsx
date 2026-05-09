@@ -9,6 +9,8 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCurrency } from "@/hooks/useCurrency";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { optimizeSupabaseImage, getSupabaseSrcSet } from "@/utils/imageOptimization";
+
 
 interface Review {
   id: string;
@@ -178,8 +180,11 @@ const ProductCard = ({ product }: ProductCardProps) => {
       >
         <Link to={`/producto/${product.slug}`}>
           <motion.img
-            src={product.image_url || "/assets/placeholder.svg"}
+            src={optimizeSupabaseImage(product.image_url, { width: isMobile ? 400 : 600 })}
+            srcSet={getSupabaseSrcSet(product.image_url, isMobile ? [200, 400, 600] : [400, 600, 800])}
+            sizes="(max-width: 768px) 50vw, 33vw"
             alt={product.name}
+            loading="lazy"
             whileHover={!isMobile ? { scale: 1.06 } : {}}
             transition={{ duration: 0.55, ease: [0.23, 1, 0.32, 1] }}
             style={{
