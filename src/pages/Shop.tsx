@@ -9,6 +9,7 @@ import CartDrawer from "@/components/store/CartDrawer";
 import ProductCard from "@/components/store/ProductCard";
 import { useProducts } from "@/hooks/useProducts";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/lib/supabase";
 import type { Category } from "@/lib/supabase";
 import shopBannerImg from "@/assets/bannershop2.png";
@@ -190,7 +191,7 @@ const SidebarContent = ({
 
 // ── Shop ───────────────────────────────────────────────────────
 const Shop = () => {
-  const isMobile = window.innerWidth < 1024;
+  const isMobile = useIsMobile();
   const [searchParams, setSearchParams]         = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery]           = useState(searchParams.get("search") || "");
@@ -362,8 +363,8 @@ const Shop = () => {
           ) : (
             <div style={{ 
               display: "grid", 
-              gridTemplateColumns: "repeat(auto-fill, minmax(clamp(170px, 25vw, 300px), 1fr))", 
-              gap: isMobile ? 16 : 32 
+              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(3, 1fr)", 
+              gap: isMobile ? "12px" : "32px" 
             }}>
               {filtered.map((product, i) => (
                 <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>

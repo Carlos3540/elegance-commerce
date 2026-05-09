@@ -101,22 +101,22 @@ const ProductCard = ({ product }: ProductCardProps) => {
         infoLeft: 0,
         starSize: 10, ratingFont: 10,
         nameFont: "13px", nameHeight: "2.6em",
-        priceFont: "14px",
-        comparePriceFont: 10,
+        priceFont: "15px",
+        comparePriceFont: 11,
         sizeFont: 9, maxSizes: 3,
-        ctaHeight: 36, ctaFont: 10,
-        ctaIconSize: 12,
+        ctaHeight: 32, ctaFont: 9,
+        ctaIconSize: 11,
         // reviews panel
-        reviewPadding: "12px",
-        reviewMarginTop: 10,
-        reviewBigFont: 20,
-        reviewStarSize: 12,
-        reviewMetaFont: 10,
-        reviewLinkFont: 10,
-        reviewAvatarSize: 24, reviewAvatarFont: 10,
-        reviewAuthorFont: 11, reviewCommentFont: 11,
-        reviewGap: 10,
-        reviewItemPadding: 10,
+        reviewPadding: "10px",
+        reviewMarginTop: 8,
+        reviewBigFont: 18,
+        reviewStarSize: 11,
+        reviewMetaFont: 9,
+        reviewLinkFont: 9,
+        reviewAvatarSize: 22, reviewAvatarFont: 9,
+        reviewAuthorFont: 10, reviewCommentFont: 10,
+        reviewGap: 8,
+        reviewItemPadding: 8,
       }
     : {
         imageRadius: 16,
@@ -219,7 +219,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               -{discountPct}%
             </span>
           )}
-          {product.is_featured && (
+          {product.metadata?.is_new && (
             <span
               style={{
                 background: "#111",
@@ -326,6 +326,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <Link to={`/producto/${product.slug}`}>
           <motion.div
             initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
             whileHover={!isMobile ? { opacity: 1, y: 0 } : {}}
             style={{
               position: "absolute",
@@ -367,36 +368,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
           minWidth: 0,
         }}
       >
-        {/* Rating */}
-        <button
-          onClick={() => setShowReviews(v => !v)}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            marginBottom: isMobile ? 4 : 6,
-            // Ensure text doesn't overflow
-            minWidth: 0,
-            overflow: "hidden",
-          }}
-        >
-          <StarRating rating={avgRating} size={r.starSize} />
-          <span
-            style={{
-              fontSize: r.ratingFont,
-              color: "#9ca3af",
-              fontWeight: 600,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {avgRating.toFixed(1)} ({reviewCount})
-          </span>
-        </button>
-
         {/* Nombre */}
         <Link to={`/producto/${product.slug}`} style={{ textDecoration: "none" }}>
           <h3
@@ -404,8 +375,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
               fontSize: r.nameFont,
               fontWeight: 600,
               color: "#111",
-              marginBottom: isMobile ? 4 : 6,
-              lineHeight: 1.3,
+              marginBottom: 2,
+              lineHeight: 1.25,
               letterSpacing: "-0.01em",
               display: "-webkit-box",
               WebkitLineClamp: 2,
@@ -424,16 +395,16 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <div
           style={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "baseline",
             gap: 6,
-            marginBottom: isMobile ? 8 : 12,
+            marginBottom: isMobile ? 2 : 4,
             flexWrap: "wrap",
           }}
         >
           <span
             style={{
               fontSize: r.priceFont,
-              fontWeight: 800,
+              fontWeight: 900,
               color: "#111",
               whiteSpace: "nowrap",
             }}
@@ -454,6 +425,36 @@ const ProductCard = ({ product }: ProductCardProps) => {
           )}
         </div>
 
+        {/* Rating */}
+        <button
+          onClick={() => setShowReviews(v => !v)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 4,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            marginBottom: isMobile ? 6 : 8,
+            // Ensure text doesn't overflow
+            minWidth: 0,
+            overflow: "hidden",
+          }}
+        >
+          <StarRating rating={avgRating} size={r.starSize} />
+          <span
+            style={{
+              fontSize: r.ratingFont,
+              color: "#9ca3af",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {avgRating.toFixed(1)}
+          </span>
+        </button>
+
         {/* Tallas */}
         {product.metadata?.sizes?.length > 0 && (
           <div
@@ -468,13 +469,13 @@ const ProductCard = ({ product }: ProductCardProps) => {
               <span
                 key={s}
                 style={{
-                  fontSize: r.sizeFont,
+                  fontSize: 8,
                   fontWeight: 700,
-                  color: "#555",
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 4,
-                  padding: "1px 6px",
-                  letterSpacing: "0.04em",
+                  color: "#777",
+                  border: "1px solid #eee",
+                  borderRadius: 3,
+                  padding: "1px 4px",
+                  letterSpacing: "0.02em",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -482,7 +483,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
               </span>
             ))}
             {isMobile && product.metadata.sizes.length > 3 && (
-              <span style={{ fontSize: r.sizeFont, color: "#999", alignSelf: "center" }}>
+              <span style={{ fontSize: 9, color: "#999", alignSelf: "center" }}>
                 +{product.metadata.sizes.length - 3}
               </span>
             )}
@@ -504,18 +505,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
             background: "#111",
             color: "#fff",
             border: "none",
-            borderRadius: 8,
+            borderRadius: 6,
             fontSize: r.ctaFont,
             fontWeight: 800,
-            letterSpacing: "0.08em",
+            letterSpacing: "0.06em",
             textTransform: "uppercase",
             cursor: "pointer",
             transition: "all 0.2s",
             textDecoration: "none",
-            marginTop: isMobile ? 4 : 8,
+            marginTop: 4,
             width: "100%",
             // Prevent button from shrinking below readable size
-            minHeight: 36,
+            minHeight: 32,
             boxSizing: "border-box",
           }}
           onMouseEnter={e => {

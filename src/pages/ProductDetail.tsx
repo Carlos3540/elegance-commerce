@@ -14,6 +14,7 @@ import {
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useCurrency } from "@/hooks/useCurrency";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/lib/supabase";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -95,6 +96,7 @@ const ProductDetail = () => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { user }                       = useAuth();
   const { format }                     = useCurrency();
+  const isMobile                       = useIsMobile();
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [selectedImageIdx, setSelectedImageIdx] = useState(0);
@@ -332,12 +334,24 @@ const ProductDetail = () => {
       </div>
 
       {/* ── Main grid ─────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "28px 28px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1fr)", gap: 60, alignItems: "start" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", padding: isMobile ? "16px 16px 0" : "28px 28px 0" }}>
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1fr) minmax(0,1fr)", 
+          gap: isMobile ? 32 : 60, 
+          alignItems: "start" 
+        }}>
 
           {/* LEFT — Gallery */}
           <div>
-            <div style={{ position: "relative", borderRadius: 20, overflow: "hidden", background: "#f0ede8", aspectRatio: "3 / 4", marginBottom: 14 }}>
+            <div style={{ 
+              position: "relative", 
+              borderRadius: isMobile ? 16 : 20, 
+              overflow: "hidden", 
+              background: "#f0ede8", 
+              aspectRatio: "3 / 4", 
+              marginBottom: isMobile ? 10 : 14 
+            }}>
               {/* key={currentImage} dispara CSS animation, sin framer → sin removeChild */}
               <img
                 key={currentImage}
@@ -358,13 +372,32 @@ const ProductDetail = () => {
             </div>
 
             {displayImages.length > 1 && (
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ 
+                display: "flex", 
+                gap: 8, 
+                flexWrap: isMobile ? "nowrap" : "wrap",
+                overflowX: isMobile ? "auto" : "visible",
+                paddingBottom: isMobile ? 8 : 0,
+                WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none"
+              }}>
                 {displayImages.map((imgUrl, idx) => {
                   const record = allImages.find((img) => img.url === imgUrl);
                   const stableKey = record ? `thumb-${record.id}` : `thumb-url-${idx}`;
                   return (
                     <button key={stableKey} className="thumb-btn" onClick={() => setSelectedImageIdx(idx)}
-                      style={{ width: 76, height: 76, flexShrink: 0, borderRadius: 12, overflow: "hidden", border: `2px solid ${selectedImageIdx === idx ? "#111" : "#e5e7eb"}`, cursor: "pointer", padding: 0, background: "#f0ede8", transition: "border-color 0.15s" }}>
+                      style={{ 
+                        width: isMobile ? 64 : 76, 
+                        height: isMobile ? 64 : 76, 
+                        flexShrink: 0, 
+                        borderRadius: 12, 
+                        overflow: "hidden", 
+                        border: `2px solid ${selectedImageIdx === idx ? "#111" : "#e5e7eb"}`, 
+                        cursor: "pointer", 
+                        padding: 0, 
+                        background: "#f0ede8", 
+                        transition: "border-color 0.15s" 
+                      }}>
                       <img src={imgUrl} alt={`Vista ${idx + 1}`} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                     </button>
                   );
@@ -382,7 +415,14 @@ const ProductDetail = () => {
               </p>
             )}
 
-            <h1 style={{ fontSize: 28, fontWeight: 900, color: "#111", letterSpacing: "-0.03em", lineHeight: 1.15, marginBottom: 12 }}>
+            <h1 style={{ 
+              fontSize: isMobile ? 24 : 28, 
+              fontWeight: 900, 
+              color: "#111", 
+              letterSpacing: "-0.03em", 
+              lineHeight: 1.15, 
+              marginBottom: 12 
+            }}>
               {product.name}
             </h1>
 
@@ -394,11 +434,11 @@ const ProductDetail = () => {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
-              <span style={{ fontSize: 28, fontWeight: 900, color: "#111", letterSpacing: "-0.03em" }}>{format(product.price)}</span>
+              <span style={{ fontSize: isMobile ? 24 : 28, fontWeight: 900, color: "#111", letterSpacing: "-0.03em" }}>{format(product.price)}</span>
               {hasDiscount && (
                 <>
-                  <span style={{ fontSize: 17, color: "#9ca3af", textDecoration: "line-through" }}>{format(product.compare_price!)}</span>
-                  <span style={{ fontSize: 11, fontWeight: 800, background: "#fee2e2", color: "#bb3838", padding: "3px 9px", borderRadius: 7 }}>-{discountPct}%</span>
+                  <span style={{ fontSize: isMobile ? 15 : 17, color: "#9ca3af", textDecoration: "line-through" }}>{format(product.compare_price!)}</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, background: "#fee2e2", color: "#bb3838", padding: "3px 9px", borderRadius: 7 }}>-{discountPct}%</span>
                 </>
               )}
             </div>
@@ -526,9 +566,14 @@ const ProductDetail = () => {
       </div>
 
       {/* ══ REVIEWS ══════════════════════════════════════════════════════════ */}
-      <div style={{ maxWidth: 1240, margin: "72px auto 80px", padding: "0 28px" }}>
-        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 52 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,2fr)", gap: 56, alignItems: "start" }}>
+      <div style={{ maxWidth: 1240, margin: isMobile ? "40px auto 60px" : "72px auto 80px", padding: isMobile ? "0 16px" : "0 28px" }}>
+        <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: isMobile ? 32 : 52 }}>
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: isMobile ? "1fr" : "minmax(0,1fr) minmax(0,2fr)", 
+            gap: isMobile ? 40 : 56, 
+            alignItems: "start" 
+          }}>
 
             {/* Summary */}
             <div>
@@ -536,7 +581,7 @@ const ProductDetail = () => {
               {reviews.length > 0 ? (
                 <>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
-                    <span style={{ fontSize: 54, fontWeight: 900, color: "#111", letterSpacing: "-0.04em", lineHeight: 1 }}>{avgRating.toFixed(1)}</span>
+                    <span style={{ fontSize: isMobile ? 42 : 54, fontWeight: 900, color: "#111", letterSpacing: "-0.04em", lineHeight: 1 }}>{avgRating.toFixed(1)}</span>
                     <span style={{ fontSize: 14, color: "#9ca3af" }}>/ 5</span>
                   </div>
                   <StarRating value={Math.round(avgRating)} size={20} />

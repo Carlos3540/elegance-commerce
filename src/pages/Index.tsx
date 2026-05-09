@@ -12,6 +12,7 @@ import { useProducts } from "@/hooks/useProducts";
 import Navbar from "@/components/store/Navbar";
 import Footer from "@/components/store/Footer";
 import CartDrawer from "@/components/store/CartDrawer";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ig1 from "@/assets/ig1.jpg";
 import ig2 from "@/assets/ig2.jpg";
 import ig3 from "@/assets/ig3.jpg";
@@ -22,17 +23,6 @@ import stefania from "@/assets/stefania.jpg";
 import brand from "@/assets/evolet-brand.png";
 import configuradorBg from "@/assets/configurador-bg.png";
 
-// ── Responsive hook ────────────────────────────────────────────
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-  return isMobile;
-};
 
 // ── Marquee ticker ─────────────────────────────────────────────
 const TICKER_ITEMS = [
@@ -523,8 +513,8 @@ const NewArrivals = () => {
         ) : (
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fill, minmax(clamp(170px, 25vw, 300px), 1fr))", 
-            gap: isMobile ? 16 : 32 
+            gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", 
+            gap: isMobile ? "12px" : "24px" 
           }}>
             {products.map((product, i) => (
               <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
