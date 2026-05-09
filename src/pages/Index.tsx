@@ -523,8 +523,8 @@ const NewArrivals = () => {
         ) : (
           <div style={{ 
             display: "grid", 
-            gridTemplateColumns: "repeat(auto-fill, minmax(clamp(150px, 22vw, 260px), 1fr))", 
-            gap: isMobile ? 12 : 24 
+            gridTemplateColumns: "repeat(auto-fill, minmax(clamp(170px, 25vw, 300px), 1fr))", 
+            gap: isMobile ? 16 : 32 
           }}>
             {products.map((product, i) => (
               <motion.div key={product.id} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}>
