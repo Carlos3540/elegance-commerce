@@ -181,8 +181,6 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <Link to={`/producto/${product.slug}`}>
           <motion.img
             src={optimizeSupabaseImage(product.image_url, { width: isMobile ? 400 : 600 })}
-            srcSet={getSupabaseSrcSet(product.image_url, isMobile ? [200, 400, 600] : [400, 600, 800])}
-            sizes="(max-width: 768px) 50vw, 33vw"
             alt={product.name}
             loading="lazy"
             whileHover={!isMobile ? { scale: 1.06 } : {}}

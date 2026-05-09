@@ -17,27 +17,27 @@ interface OptimizeOptions {
  */
 export const optimizeSupabaseImage = (url: string | null | undefined, options: OptimizeOptions = {}) => {
   if (!url) return "/assets/placeholder.svg";
+  
+  // Si no es una URL de Supabase, devolver tal cual
   if (!url.includes("supabase.co/storage/v1/object/public/")) return url;
 
-  const {
-    width,
-    height,
-    quality = 75,
-    format = 'webp'
-  } = options;
-
-  // Convertir URL de objeto a URL de renderizado
-  // De: .../storage/v1/object/public/bucket/path
-  // A:  .../storage/v1/render/image/public/bucket/path
-  const renderUrl = url.replace("/object/public/", "/render/image/public/");
+  // IMPORTANTE: La transformación de imágenes (endpoint /render/) es una función de PAGO en Supabase.
+  // Si tu proyecto está en el plan gratuito, las imágenes NO cargarán si usamos /render/.
+  // Por ahora, devolvemos la URL original para asegurar que el sitio funcione.
   
+  /* 
+  // Descomenta esto si tienes un plan Pro:
+  const { width, height, quality = 75, format = 'webp' } = options;
+  const renderUrl = url.replace("/object/public/", "/render/image/public/");
   const params = new URLSearchParams();
   if (width) params.append("width", width.toString());
   if (height) params.append("height", height.toString());
   params.append("quality", quality.toString());
   params.append("format", format);
-
   return `${renderUrl}?${params.toString()}`;
+  */
+
+  return url;
 };
 
 /**
