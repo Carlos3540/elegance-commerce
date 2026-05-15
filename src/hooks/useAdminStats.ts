@@ -55,14 +55,15 @@ export const useAdminStats = () => {
         productsRes, usersRes, usersMonthRes,
         recentOrdersRes, orderItemsRes, yearOrdersRes,
       ] = await Promise.all([
-        supabase.from('orders').select('total, status').neq('status', 'cancelled'),
-        supabase.from('orders').select('total, status').gte('created_at', startOfMonth).neq('status', 'cancelled'),
-        supabase.from('orders').select('total').gte('created_at', startOfLastMonth).lt('created_at', startOfMonth).neq('status', 'cancelled'),
+        supabase.from('orders').select('total, status, created_at').neq('status', 'cancelled'),
+        supabase.from('orders').select('total, status, created_at').gte('created_at', startOfMonth).neq('status', 'cancelled'),
+        supabase.from('orders').select('total, status, created_at').gte('created_at', startOfLastMonth).lt('created_at', startOfMonth).neq('status', 'cancelled'),
         supabase.from('products').select('id, is_active, stock, low_stock_threshold'),
         supabase.from('profiles').select('id').neq('role', 'admin'),
         supabase.from('profiles').select('id').gte('created_at', startOfMonth).neq('role', 'admin'),
+        // Sin join a profiles (bloqueado por RLS) — usar shipping_name del snapshot
         supabase.from('orders')
-          .select('id, total, status, created_at, profiles(full_name, email), order_items(product_name)')
+          .select('id, total, status, created_at, shipping_name, shipping_email, order_items(product_name)')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('order_items')
           .select('product_id, product_name, quantity, products(id, name, price, image_url)')
@@ -103,7 +104,7 @@ export const useAdminStats = () => {
       const recentOrders = (recentOrdersRes.data || []).map((o: any) => ({
         id: o.id,
         shortId: `#${o.id.slice(-6).toUpperCase()}`,
-        customer: o.profiles?.full_name || o.profiles?.email || 'Cliente',
+        customer: o.shipping_name || o.shipping_email || 'Cliente',
         product: o.order_items?.[0]?.product_name || '—',
         amount: Number(o.total),
         status: o.status,
@@ -164,16 +165,26 @@ export const useAdminStats = () => {
   }, []);
 
   useEffect(() => {
-    fetchStats();
+    let mounted = true;
 
+    const load = async () => { if (mounted) await fetchStats(); };
+    load();
+
+    // Nombre único para evitar conflictos con React Strict Mode
+    const channelName = `admin-stats-rt-${Date.now()}`;
     const channel = supabase
-      .channel('admin-stats-rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, fetchStats)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchStats)
-      .subscribe();
+      .channel(channelName)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },   () => { if (mounted) fetchStats(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => { if (mounted) fetchStats(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => { if (mounted) fetchStats(); })
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') console.log('[AdminStats] Realtime ✓');
+      });
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
   }, [fetchStats]);
 
   return { stats, isLoading, refetch: fetchStats };

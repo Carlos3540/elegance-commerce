@@ -1,19 +1,24 @@
 // src/pages/admin/AdminDashboard.tsx
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package, ShoppingBag, DollarSign, TrendingUp,
   ArrowUpRight, ArrowDownRight, Edit, Trash2, Plus,
   Search, ChevronRight, Activity, Users, AlertTriangle,
-  Star, MessageSquare, Trash,
+  Star, MessageSquare, Trash, Truck, X, CheckCircle,
+  Clock, AlertOctagon, Eye, RefreshCw,
 } from "lucide-react";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { useAdminProducts } from "@/hooks/useProducts";
+import { useAdminOrders, type UpdateStatusOptions } from "@/hooks/useOrders";
 import ProductModal from "@/components/admin/ProductModal";
 import BlogManager from "@/components/admin/BlogManager";
 import { supabase } from "@/lib/supabase";
-import type { Product } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import type { Product, Order } from "@/lib/supabase";
+
+const COP = (n: number) => new Intl.NumberFormat('es-CO',{ style:'currency', currency:'COP', minimumFractionDigits:0 }).format(n);
 
 const STATUS_LABEL: Record<string,string> = { pending:"Pendiente", confirmed:"Confirmado", processing:"Procesando", shipped:"En camino", delivered:"Entregado", cancelled:"Cancelado", refunded:"Reembolsado" };
 const STATUS_COLOR: Record<string,string> = { pending:"#fbbf24", confirmed:"#7da4ff", processing:"#a78bfa", shipped:"#7da4ff", delivered:"#34d399", cancelled:"#f87171", refunded:"#f87171" };
@@ -501,6 +506,275 @@ const ReviewsManager = () => {
   );
 };
 
+// ─── ORDER DETAIL PANEL ────────────────────────────────────────
+const VALID_STATUSES = [
+  { value:'pending',    label:'Pendiente' },
+  { value:'confirmed',  label:'Confirmado' },
+  { value:'processing', label:'Procesando' },
+  { value:'shipped',    label:'En camino' },
+  { value:'delivered',  label:'Entregado' },
+  { value:'cancelled',  label:'Cancelado' },
+  { value:'refunded',   label:'Reembolsado' },
+];
+
+const OrderDetailPanel = ({ order, onClose, onStatusUpdate }: { order: Order; onClose: ()=>void; onStatusUpdate: (id:string, status:string, opts:UpdateStatusOptions)=>Promise<void> }) => {
+  const [newStatus, setNewStatus] = useState(order.status);
+  const [carrier, setCarrier]     = useState(order.carrier || '');
+  const [tracking, setTracking]   = useState(order.tracking_number || '');
+  const [trackUrl, setTrackUrl]   = useState(order.tracking_url || '');
+  const [estDel, setEstDel]       = useState(order.estimated_delivery || '');
+  const [cancelReason, setCancelReason] = useState(order.cancellation_reason || '');
+  const [notes, setNotes]         = useState('');
+  const [boldStatus, setBoldStatus] = useState<string|null>(null);
+  const [saving, setSaving]       = useState(false);
+
+  useEffect(()=>{
+    supabase.from('pagos_bold').select('bold_status').eq('order_id', order.id)
+      .order('created_at',{ascending:false}).limit(1).maybeSingle()
+      .then(({data})=>{ if(data) setBoldStatus(data.bold_status); });
+  },[order.id]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onStatusUpdate(order.id, newStatus, {
+        carrier: carrier||undefined,
+        tracking_number: tracking||undefined,
+        tracking_url: trackUrl||undefined,
+        estimated_delivery: estDel||undefined,
+        cancellation_reason: cancelReason||undefined,
+        notes: notes||undefined,
+      });
+      onClose();
+    } catch(e){ console.error(e); }
+    finally { setSaving(false); }
+  };
+
+  const inp = { background:'#1a1d2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#fff', padding:'10px 14px', fontSize:13, fontFamily:"'DM Sans',sans-serif", width:'100%', outline:'none', boxSizing:'border-box' as const };
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'flex-end' }}>
+      <div onClick={onClose} style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }} />
+      <motion.div initial={{x:400}} animate={{x:0}} exit={{x:400}} transition={{type:'spring',stiffness:300,damping:30}}
+        style={{ position:'relative', zIndex:1, width:'min(520px,100vw)', height:'100vh', background:'#0c0e1a', borderLeft:'1px solid rgba(255,255,255,0.08)', overflowY:'auto', padding:32, display:'flex', flexDirection:'column', gap:20 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div>
+            <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>Pedido #{order.id.slice(0,8).toUpperCase()}</p>
+            <p style={{ fontSize:20, fontWeight:800, color:'#fff', fontFamily:"'DM Sans',sans-serif" }}>{COP(order.total)}</p>
+          </div>
+          <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:8, padding:8, cursor:'pointer', color:'rgba(255,255,255,0.6)' }}><X size={16}/></button>
+        </div>
+
+        {/* Cliente */}
+        <div style={{ background:'#0f1120', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10, fontFamily:"'DM Sans',sans-serif" }}>Cliente</p>
+          <p style={{ fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif" }}>{order.shipping_name}</p>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', fontFamily:"'DM Sans',sans-serif", marginTop:3 }}>{order.shipping_email}</p>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', fontFamily:"'DM Sans',sans-serif", marginTop:3 }}>{order.shipping_phone}</p>
+          {order.shipping_address && <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginTop:6 }}>
+            {(order.shipping_address as any).address_line1}, {(order.shipping_address as any).city}, {(order.shipping_address as any).department}
+          </p>}
+        </div>
+
+        {/* Pago Bold */}
+        {boldStatus && (
+          <div style={{ padding:'8px 14px', borderRadius:8, background: boldStatus==='APPROVED'?'rgba(52,211,153,0.09)':boldStatus==='PENDING'?'rgba(251,191,36,0.09)':'rgba(248,113,113,0.09)', display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:12, fontWeight:700, color: boldStatus==='APPROVED'?'#34d399':boldStatus==='PENDING'?'#fbbf24':'#f87171', fontFamily:"'DM Sans',sans-serif" }}>Bold: {boldStatus}</span>
+          </div>
+        )}
+
+        {/* Productos */}
+        {(order.order_items||[]).length > 0 && (
+          <div style={{ background:'#0f1120', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12, fontFamily:"'DM Sans',sans-serif" }}>Productos</p>
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {(order.order_items||[]).map((item:any)=>(
+                <div key={item.id} style={{ display:'flex', alignItems:'center', gap:10 }}>
+                  {item.product_image && <img src={item.product_image} alt={item.product_name} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', border:'1px solid rgba(255,255,255,0.07)' }}/>}
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.8)', fontFamily:"'DM Sans',sans-serif", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.product_name}</p>
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>x{item.quantity} · {COP(item.unit_price)}</p>
+                  </div>
+                  <p style={{ fontSize:13, fontWeight:700, color:'#fff', fontFamily:"'DM Sans',sans-serif" }}>{COP(item.subtotal)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Cambio de estado */}
+        <div style={{ background:'#0f1120', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.06)' }}>
+          <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12, fontFamily:"'DM Sans',sans-serif" }}>Actualizar estado</p>
+          <select value={newStatus} onChange={e=>setNewStatus(e.target.value as any)}
+            style={{ ...inp, marginBottom:12 }}>
+            {VALID_STATUSES.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}
+          </select>
+          {newStatus==='shipped' && (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+              <input placeholder="Transportadora (ej. Servientrega)" value={carrier} onChange={e=>setCarrier(e.target.value)} style={inp}/>
+              <input placeholder="Número de guía" value={tracking} onChange={e=>setTracking(e.target.value)} style={inp}/>
+              <input placeholder="URL de rastreo (opcional)" value={trackUrl} onChange={e=>setTrackUrl(e.target.value)} style={inp}/>
+              <input type="date" value={estDel} onChange={e=>setEstDel(e.target.value)} style={inp}/>
+            </div>
+          )}
+          {newStatus==='cancelled' && (
+            <input placeholder="Motivo de cancelación" value={cancelReason} onChange={e=>setCancelReason(e.target.value)} style={{ ...inp, marginTop:8 }}/>
+          )}
+          <textarea placeholder="Notas internas (opcional)" value={notes} onChange={e=>setNotes(e.target.value)} rows={2}
+            style={{ ...inp, marginTop:8, resize:'none' }}/>
+          <button onClick={handleSave} disabled={saving}
+            style={{ marginTop:12, width:'100%', padding:'12px', background:'#7da4ff', border:'none', borderRadius:10, color:'#0c0e1a', fontSize:14, fontWeight:800, fontFamily:"'DM Sans',sans-serif", cursor:'pointer', opacity:saving?0.6:1 }}>
+            {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
+
+        {/* Historial */}
+        {(order.status_history||[]).length > 0 && (
+          <div style={{ background:'#0f1120', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.06)' }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:12, fontFamily:"'DM Sans',sans-serif" }}>Historial</p>
+            {[...(order.status_history||[])].reverse().map((h:any,i:number)=>(
+              <div key={h.id||i} style={{ display:'flex', gap:10, marginBottom:12 }}>
+                <div style={{ width:8, height:8, borderRadius:'50%', background:'#7da4ff', flexShrink:0, marginTop:4 }}/>
+                <div>
+                  <p style={{ fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.7)', fontFamily:"'DM Sans',sans-serif" }}>{STATUS_LABEL[h.new_status]||h.new_status}</p>
+                  {h.notes && <p style={{ fontSize:11, color:'rgba(255,255,255,0.35)', fontFamily:"'DM Sans',sans-serif" }}>{h.notes}</p>}
+                  <p style={{ fontSize:11, color:'rgba(255,255,255,0.25)', fontFamily:"'DM Sans',sans-serif" }}>{new Date(h.changed_at).toLocaleString('es-CO')}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
+    </div>
+  );
+};
+
+// ─── ORDERS MANAGER ────────────────────────────────────────────
+const OrdersManager = () => {
+  const { orders, isLoading, refetch, updateOrderStatus } = useAdminOrders();
+  const { toast } = useToast();
+  const [search, setSearch]           = useState('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order|null>(null);
+  const prevCountRef = React.useRef(0);
+
+  // Toast em tempo real quando chega novo pedido
+  useEffect(()=>{
+    if (!isLoading && orders.length > prevCountRef.current && prevCountRef.current > 0) {
+      const newest = orders[0];
+      toast({ title:'🛍 Nueva orden', description:`${newest.shipping_name} · ${COP(newest.total)}` });
+    }
+    prevCountRef.current = orders.length;
+  },[orders, isLoading]);
+
+  const filtered = orders.filter(o=>{
+    const matchSearch = !search ||
+      o.id.toLowerCase().includes(search.toLowerCase()) ||
+      ((o as any).profiles?.full_name||'').toLowerCase().includes(search.toLowerCase()) ||
+      ((o as any).profiles?.email||'').toLowerCase().includes(search.toLowerCase()) ||
+      o.shipping_name.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus==='all' || o.status===filterStatus;
+    return matchSearch && matchStatus;
+  });
+
+  const handleStatusUpdate = async (id:string, status:string, opts:UpdateStatusOptions) => {
+    await updateOrderStatus(id, status, opts);
+    toast({ title:'Estado actualizado', description:`Pedido actualizado a: ${STATUS_LABEL[status]||status}` });
+    setSelectedOrder(null);
+  };
+
+  return (
+    <div style={{ padding:'30px 36px' }}>
+      {selectedOrder && (
+        <AnimatePresence>
+          <OrderDetailPanel order={selectedOrder} onClose={()=>setSelectedOrder(null)} onStatusUpdate={handleStatusUpdate}/>
+        </AnimatePresence>
+      )}
+
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:26 }}>
+        <div>
+          <h2 style={{ fontSize:22, fontWeight:800, color:'#fff', fontFamily:"'DM Sans',sans-serif", letterSpacing:'-0.03em' }}>Órdenes</h2>
+          <p style={{ fontSize:14, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginTop:4 }}>
+            {isLoading ? 'Cargando...' : `${orders.length} pedidos en total`}
+          </p>
+        </div>
+        <button onClick={refetch} style={{ display:'flex', alignItems:'center', gap:6, padding:'10px 18px', borderRadius:10, background:'rgba(99,153,255,0.09)', border:'1px solid rgba(99,153,255,0.17)', color:'#7da4ff', cursor:'pointer', fontSize:13, fontWeight:700, fontFamily:"'DM Sans',sans-serif" }}>
+          <RefreshCw size={13}/> Actualizar
+        </button>
+      </div>
+
+      {/* Filtros */}
+      <div style={{ display:'flex', gap:10, marginBottom:18, flexWrap:'wrap' }}>
+        <div style={{ position:'relative', flex:1, minWidth:200 }}>
+          <Search size={14} style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'rgba(255,255,255,0.22)' }}/>
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar por nombre, email o ID..."
+            style={{ width:'100%', padding:'11px 16px 11px 40px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', background:'#0f1120', color:'#fff', fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:'none', boxSizing:'border-box' }}/>
+        </div>
+        <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
+          style={{ padding:'11px 14px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', background:'#0f1120', color:'rgba(255,255,255,0.7)', fontSize:13, fontFamily:"'DM Sans',sans-serif", outline:'none' }}>
+          <option value="all">Todos los estados</option>
+          {VALID_STATUSES.map(s=><option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+      </div>
+
+      {/* Tabla */}
+      <div style={{ background:'#0f1120', border:'1px solid rgba(255,255,255,0.065)', borderRadius:18, overflow:'hidden' }}>
+        {isLoading ? (
+          <div style={{ padding:50, textAlign:'center' }}>
+            <div style={{ width:32, height:32, border:'2px solid rgba(99,153,255,0.3)', borderTopColor:'#7da4ff', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto' }}/>
+          </div>
+        ) : filtered.length===0 ? (
+          <div style={{ padding:60, textAlign:'center' }}>
+            <ShoppingBag size={32} style={{ color:'rgba(255,255,255,0.1)', marginBottom:14 }}/>
+            <p style={{ fontSize:14, color:'rgba(255,255,255,0.2)', fontFamily:"'DM Sans',sans-serif" }}>
+              {search||filterStatus!=='all' ? 'Sin resultados para ese filtro' : 'Aún no hay órdenes'}
+            </p>
+          </div>
+        ) : (
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom:'1px solid rgba(255,255,255,0.055)' }}>
+                {['ID','Cliente','Productos','Total','Estado','Fecha',''].map((h,i)=>(
+                  <th key={h||i} style={{ padding:'14px 20px', textAlign:i===6?'right':'left', fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.22)', fontFamily:"'DM Sans',sans-serif", letterSpacing:'0.08em', textTransform:'uppercase' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((o,i)=>(
+                <motion.tr key={o.id} initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.02}}
+                  style={{ borderBottom:'1px solid rgba(255,255,255,0.032)' }}>
+                  <td style={{ padding:'14px 20px', fontSize:12, fontWeight:700, color:'rgba(255,255,255,0.35)', fontFamily:"'DM Sans',sans-serif", fontVariantNumeric:'tabular-nums' }}>{o.id.slice(0,8).toUpperCase()}</td>
+                  <td style={{ padding:'14px 20px' }}>
+                    <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.8)', fontFamily:"'DM Sans',sans-serif" }}>{o.shipping_name}</p>
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>{o.shipping_email}</p>
+                  </td>
+                  <td style={{ padding:'14px 20px', fontSize:12, color:'rgba(255,255,255,0.4)', fontFamily:"'DM Sans',sans-serif" }}>{(o.order_items||[]).length} ítem(s)</td>
+                  <td style={{ padding:'14px 20px', fontSize:14, fontWeight:800, color:'#fff', fontFamily:"'DM Sans',sans-serif" }}>{COP(o.total)}</td>
+                  <td style={{ padding:'14px 20px' }}>
+                    <span style={{ fontSize:11, fontWeight:700, color:STATUS_COLOR[o.status]||'#fff', background:STATUS_BG[o.status]||'rgba(255,255,255,0.05)', padding:'4px 10px', borderRadius:8, fontFamily:"'DM Sans',sans-serif" }}>
+                      {STATUS_LABEL[o.status]||o.status}
+                    </span>
+                  </td>
+                  <td style={{ padding:'14px 20px', fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>
+                    {new Date(o.created_at).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'})}
+                  </td>
+                  <td style={{ padding:'14px 20px', textAlign:'right' }}>
+                    <button onClick={()=>setSelectedOrder(o as any)}
+                      style={{ display:'inline-flex', alignItems:'center', gap:5, background:'rgba(99,153,255,0.09)', border:'1px solid rgba(99,153,255,0.17)', color:'#7da4ff', padding:'7px 12px', borderRadius:8, cursor:'pointer', fontSize:12, fontWeight:700, fontFamily:"'DM Sans',sans-serif" }}>
+                      <Eye size={13}/> Ver
+                    </button>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+      <style>{`@keyframes spin { to { transform:rotate(360deg); } }`}</style>
+    </div>
+  );
+};
+
 // ─── COMING SOON ──────────────────────────────────────────────
 const ComingSoon = ({ title }: { title: string }) => (
   <div style={{ padding:"30px 36px" }}>
@@ -520,7 +794,7 @@ const AdminDashboard = () => {
     if (pathname === "/admin/productos")  return <ProductsManager />;
     if (pathname === "/admin/blog")       return <BlogManager />;
     if (pathname === "/admin/resenas")    return <ReviewsManager />;
-    if (pathname === "/admin/ordenes")    return <ComingSoon title="Órdenes" />;
+    if (pathname === "/admin/ordenes")    return <OrdersManager />;
     return <Overview />;
   };
 
