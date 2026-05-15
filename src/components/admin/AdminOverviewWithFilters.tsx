@@ -83,7 +83,7 @@ export const DateFilterPicker: React.FC<{
       </button>
       {open && (<>
         <div onClick={()=>setOpen(false)} style={{position:'fixed',inset:0,zIndex:40}}/>
-        <motion.div initial={{opacity:0,y:6,scale:0.97}} animate={{opacity:1,y:0,scale:1}} transition={{duration:0.15}}
+        <div className="date-filter-dropdown"
           style={{position:'absolute',top:'110%',right:0,zIndex:50,minWidth:300,background:'#0c0e1a',border:'1px solid rgba(255,255,255,0.1)',borderRadius:14,boxShadow:'0 20px 60px rgba(0,0,0,0.6)',overflow:'hidden'}}>
           <div style={{padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
             {PRESET_GROUPS.map(g=>(

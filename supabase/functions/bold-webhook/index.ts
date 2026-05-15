@@ -32,7 +32,7 @@ serve(async (req) => {
     const event = JSON.parse(rawBody);
     console.log('[bold-webhook] Evento recibido:', event?.type, '| orden:', event?.data?.metadata?.orderId);
 
-    // ── 2. Solo procesar pagos exitosos ──────────────────────────────────────
+    // ── 2. Solo procesar pagos exitosos o rechazados explícitamente ──────────
     // Bold envía: payment.approved, payment.completed, etc. según su versión.
     const isSuccess =
       event?.type === 'payment.approved'  ||
@@ -40,12 +40,16 @@ serve(async (req) => {
       event?.data?.status === 'APPROVED'  ||
       event?.data?.status === 'COMPLETED';
 
-    if (!isSuccess) {
-      console.log('[bold-webhook] Evento ignorado (no es pago exitoso):', event?.type);
-      return new Response('ok', { status: 200 });
-    }
+    const isRejected =
+      event?.type === 'payment.rejected'  ||
+      event?.type === 'payment.failed' ||
+      event?.data?.status === 'REJECTED'  ||
+      event?.data?.status === 'FAILED' ||
+      event?.data?.status === 'DECLINED' ||
+      event?.data?.status === 'VOIDED' ||
+      event?.data?.status === 'ERROR';
 
-    // ── 3. Extraer metadata del pago ─────────────────────────────────────────
+    // Extraer metadata del pago para saber a qué orden afecta
     const boldOrderId = event?.data?.orderId    ?? event?.data?.order_id ?? '';
     const amount      = Number(event?.data?.amount ?? 0);
     // orderId de Supabase viene en metadata que pasamos al crear la orden
@@ -57,11 +61,26 @@ serve(async (req) => {
       return new Response('ok', { status: 200 });
     }
 
-    // ── 4. Conectar a Supabase ───────────────────────────────────────────────
+    // ── Conectar a Supabase ───────────────────────────────────────────────
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    if (isRejected) {
+      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Cancelando...`);
+      // Cancelar orden
+      await supabase.from('orders').update({ status: 'cancelled' }).eq('id', supaOrderId);
+      // Actualizar pagos_bold para que el UI en tiempo real sepa que falló
+      await supabase.from('pagos_bold').update({ bold_status: event?.data?.status || 'REJECTED' }).eq('order_id', supaOrderId);
+      return new Response('ok', { status: 200 });
+    }
+
+    if (!isSuccess) {
+      console.log('[bold-webhook] Evento ignorado (no es pago exitoso ni rechazo crítico):', event?.type);
+      return new Response('ok', { status: 200 });
+    }
+
 
     // ── 5. Obtener la orden completa ─────────────────────────────────────────
     const { data: order, error: orderError } = await supabase

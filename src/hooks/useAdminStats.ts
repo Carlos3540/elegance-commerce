@@ -63,7 +63,7 @@ export const useAdminStats = () => {
         supabase.from('profiles').select('id').gte('created_at', startOfMonth).neq('role', 'admin'),
         // Sin join a profiles (bloqueado por RLS) — usar shipping_name del snapshot
         supabase.from('orders')
-          .select('id, total, status, created_at, shipping_name, shipping_email, order_items(product_name)')
+          .select('id, total, status, created_at, shipping_name, shipping_email, order_items(product_name, quantity, unit_price)')
           .order('created_at', { ascending: false }).limit(5),
         supabase.from('order_items')
           .select('product_id, product_name, quantity, products(id, name, price, image_url)')
