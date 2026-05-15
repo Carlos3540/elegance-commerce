@@ -103,7 +103,7 @@ export const useAdminStats = () => {
       // Órdenes recientes
       const recentOrders = (recentOrdersRes.data || []).map((o: any) => ({
         id: o.id,
-        shortId: `#${o.id.slice(-6).toUpperCase()}`,
+        shortId: `#${o.id.slice(0, 8).toUpperCase()}`,
         customer: o.shipping_name || o.shipping_email || 'Cliente',
         product: o.order_items?.[0]?.product_name || '—',
         amount: Number(o.total),

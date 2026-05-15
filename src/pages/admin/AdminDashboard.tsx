@@ -17,6 +17,7 @@ import BlogManager from "@/components/admin/BlogManager";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import type { Product, Order } from "@/lib/supabase";
+import Overview from "@/components/admin/AdminOverviewWithFilters";
 
 const COP = (n: number) => new Intl.NumberFormat('es-CO',{ style:'currency', currency:'COP', minimumFractionDigits:0 }).format(n);
 
@@ -54,113 +55,6 @@ const SkeletonCard = () => (
   </div>
 );
 
-// ─── OVERVIEW ─────────────────────────────────────────────────
-const Overview = () => {
-  const { stats, isLoading } = useAdminStats();
-  const months = ["E","F","M","A","M","J","J","A","S","O","N","D"];
-  if (isLoading || !stats) return (
-    <div style={{ padding: "30px 36px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18 }}>{Array.from({length:4}).map((_,i)=><SkeletonCard key={i}/>)}</div>
-    </div>
-  );
-  const maxSales = Math.max(...stats.monthlySales, 1);
-  const cards = [
-    { label:"Ventas del Mes",    value:`$${stats.revenueThisMonth.toLocaleString()}`, change:stats.revenueChange,    positive:stats.revenueChange>=0,    icon:DollarSign,  delay:0 },
-    { label:"Órdenes del Mes",   value:stats.ordersThisMonth.toString(),              change:stats.ordersChange,     positive:stats.ordersChange>=0,     icon:ShoppingBag, delay:0.06 },
-    { label:"Productos Activos", value:stats.activeProducts.toString(),               change:0,                     positive:true,                       icon:Package,     delay:0.12 },
-    { label:"Usuarios Totales",  value:stats.totalUsers.toString(),                   change:stats.newUsersThisMonth,positive:true,                       icon:Users,       delay:0.18 },
-  ];
-  return (
-    <div style={{ padding: "30px 36px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 18, marginBottom: 26 }}>
-        {cards.map(s => <StatCard key={s.label} {...s} />)}
-      </div>
-      {stats.lowStockProducts > 0 && (
-        <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }}
-          style={{ background:"rgba(251,191,36,0.07)", border:"1px solid rgba(251,191,36,0.2)", borderRadius:12, padding:"12px 20px", marginBottom:22, display:"flex", alignItems:"center", gap:10 }}>
-          <AlertTriangle size={16} style={{ color:"#fbbf24", flexShrink:0 }} />
-          <p style={{ fontSize:13, color:"rgba(255,255,255,0.7)", fontFamily:"'DM Sans', sans-serif" }}>
-            <strong style={{ color:"#fbbf24" }}>{stats.lowStockProducts} productos</strong> con stock bajo.
-          </p>
-        </motion.div>
-      )}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:22, marginBottom:22 }}>
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.22 }}
-          style={{ background:"#0f1120", border:"1px solid rgba(255,255,255,0.065)", borderRadius:18, padding:"26px 28px" }}>
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:26 }}>
-            <div>
-              <p style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:"'DM Sans', sans-serif", letterSpacing:"-0.02em" }}>Ventas {new Date().getFullYear()}</p>
-              <p style={{ fontSize:13, color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans', sans-serif", marginTop:3 }}>Total: ${stats.totalRevenue.toLocaleString()}</p>
-            </div>
-            {stats.revenueChange !== 0 && (
-              <div style={{ display:"flex", alignItems:"center", gap:6, fontSize:13, fontWeight:700, color:stats.revenueChange>=0?"#34d399":"#f87171", background:stats.revenueChange>=0?"rgba(52,211,153,0.09)":"rgba(248,113,113,0.09)", padding:"5px 12px", borderRadius:10, fontFamily:"'DM Sans', sans-serif" }}>
-                <TrendingUp size={14} /> {stats.revenueChange>0?"+":""}{stats.revenueChange}%
-              </div>
-            )}
-          </div>
-          <div style={{ display:"flex", alignItems:"flex-end", gap:7, height:130 }}>
-            {stats.monthlySales.map((val,i) => {
-              const h = (val/maxSales)*100;
-              return <motion.div key={`bar-month-${i}`} initial={{ height:0 }} animate={{ height:`${Math.max(h,2)}%` }} transition={{ delay:0.3+i*0.04, duration:0.55, ease:[0.23,1,0.32,1] }} title={`${months[i]}: $${val.toLocaleString()}`}
-                style={{ flex:1, background:val===maxSales&&val>0?"linear-gradient(180deg,#7da4ff,#3b6fd4)":"rgba(99,153,255,0.2)", borderRadius:"5px 5px 0 0", cursor:"pointer" }} />;
-            })}
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between", marginTop:10 }}>
-            {months.map((m,mi)=><span key={`mo-${mi}`} style={{ flex:1, textAlign:"center", fontSize:11, color:"rgba(255,255,255,0.22)", fontFamily:"'DM Sans', sans-serif" }}>{m}</span>)}
-          </div>
-        </motion.div>
-        <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.26 }}
-          style={{ background:"#0f1120", border:"1px solid rgba(255,255,255,0.065)", borderRadius:18, padding:"26px 24px" }}>
-          <p style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:"'DM Sans', sans-serif", marginBottom:4, letterSpacing:"-0.02em" }}>Top Productos</p>
-          <p style={{ fontSize:13, color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans', sans-serif", marginBottom:22 }}>Más vendidos</p>
-          {stats.topProducts.length===0
-            ? <p style={{ fontSize:13, color:"rgba(255,255,255,0.2)", fontFamily:"'DM Sans', sans-serif", textAlign:"center", paddingTop:20 }}>Sin ventas aún</p>
-            : <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-                {stats.topProducts.map((p,i)=>(
-                  <div key={p.id} style={{ display:"flex", alignItems:"center", gap:12 }}>
-                    <span style={{ fontSize:12, fontWeight:700, color:"rgba(255,255,255,0.2)", width:18, fontFamily:"'DM Sans', sans-serif" }}>{i+1}</span>
-                    <img src={p.image_url||"/assets/placeholder.svg"} alt={p.name} style={{ width:36, height:36, borderRadius:8, objectFit:"cover", flexShrink:0, border:"1px solid rgba(255,255,255,0.07)" }} />
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.8)", fontFamily:"'DM Sans', sans-serif", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{p.name}</p>
-                      <p style={{ fontSize:11, color:"rgba(255,255,255,0.25)", fontFamily:"'DM Sans', sans-serif" }}>${p.price.toFixed(2)}</p>
-                    </div>
-                    <span style={{ fontSize:12, fontWeight:700, color:"#34d399", fontFamily:"'DM Sans', sans-serif" }}>{p.totalSold}</span>
-                  </div>
-                ))}
-              </div>
-          }
-        </motion.div>
-      </div>
-      <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
-        style={{ background:"#0f1120", border:"1px solid rgba(255,255,255,0.065)", borderRadius:18, overflow:"hidden" }}>
-        <div style={{ padding:"22px 28px 18px", display:"flex", alignItems:"center", justifyContent:"space-between", borderBottom:"1px solid rgba(255,255,255,0.055)" }}>
-          <div>
-            <p style={{ fontSize:17, fontWeight:800, color:"#fff", fontFamily:"'DM Sans', sans-serif", letterSpacing:"-0.02em" }}>Órdenes Recientes</p>
-            <p style={{ fontSize:13, color:"rgba(255,255,255,0.3)", fontFamily:"'DM Sans', sans-serif", marginTop:3 }}>Últimas 5 transacciones</p>
-          </div>
-          <button style={{ display:"flex", alignItems:"center", gap:5, fontSize:13, color:"#7da4ff", fontFamily:"'DM Sans', sans-serif", fontWeight:600, background:"rgba(99,153,255,0.09)", border:"1px solid rgba(99,153,255,0.17)", borderRadius:10, padding:"7px 14px", cursor:"pointer" }}>
-            Ver todas <ChevronRight size={13} />
-          </button>
-        </div>
-        {stats.recentOrders.length===0
-          ? <div style={{ padding:"40px", textAlign:"center" }}><p style={{ fontSize:14, color:"rgba(255,255,255,0.2)", fontFamily:"'DM Sans', sans-serif" }}>No hay órdenes todavía</p></div>
-          : <table style={{ width:"100%", borderCollapse:"collapse" }}>
-              <thead><tr style={{ borderBottom:"1px solid rgba(255,255,255,0.045)" }}>
-                {["ID","Cliente","Producto","Monto","Estado"].map(h=><th key={h} style={{ padding:"12px 28px", textAlign:"left", fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.22)", fontFamily:"'DM Sans', sans-serif", letterSpacing:"0.08em", textTransform:"uppercase" }}>{h}</th>)}
-              </tr></thead>
-              <tbody>
-                {stats.recentOrders.map((o,i)=>(
-                  <motion.tr key={o.id} initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.35+i*0.05 }} style={{ borderBottom:"1px solid rgba(255,255,255,0.032)" }}>
-                    <td style={{ padding:"16px 28px", fontSize:13, fontWeight:700, color:"rgba(255,255,255,0.38)", fontFamily:"'DM Sans', sans-serif" }}>{o.shortId}</td>
-                    <td style={{ padding:"16px 28px", fontSize:14, fontWeight:500, color:"rgba(255,255,255,0.75)", fontFamily:"'DM Sans', sans-serif" }}>{o.customer}</td>
-                    <td style={{ padding:"16px 28px", fontSize:13, color:"rgba(255,255,255,0.45)", fontFamily:"'DM Sans', sans-serif" }}>{o.product}</td>
-                    <td style={{ padding:"16px 28px", fontSize:15, fontWeight:800, color:"#fff", fontFamily:"'DM Sans', sans-serif" }}>${o.amount.toFixed(2)}</td>
-                    <td style={{ padding:"16px 28px" }}><span style={{ fontSize:12, fontWeight:700, color:STATUS_COLOR[o.status]||"#fff", background:STATUS_BG[o.status]||"rgba(255,255,255,0.05)", padding:"4px 12px", borderRadius:8, fontFamily:"'DM Sans', sans-serif" }}>{STATUS_LABEL[o.status]||o.status}</span></td>
-                  </motion.tr>
-                ))}
-              </tbody>
-            </table>
-        }
       </motion.div>
     </div>
   );
@@ -551,6 +445,9 @@ const OrderDetailPanel = ({ order, onClose, onStatusUpdate }: { order: Order; on
   };
 
   const inp = { background:'#1a1d2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:8, color:'#fff', padding:'10px 14px', fontSize:13, fontFamily:"'DM Sans',sans-serif", width:'100%', outline:'none', boxSizing:'border-box' as const };
+  
+  const whatsappPhone = order.shipping_phone ? order.shipping_phone.replace(/\D/g, '') : '';
+  const whatsappMsg = encodeURIComponent(`Hola ${order.shipping_name}, te escribimos de Evolet 96 sobre tu pedido #${order.id.slice(0,8).toUpperCase()}.`);
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'flex-end' }}>
@@ -561,25 +458,56 @@ const OrderDetailPanel = ({ order, onClose, onStatusUpdate }: { order: Order; on
           <div>
             <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>Pedido #{order.id.slice(0,8).toUpperCase()}</p>
             <p style={{ fontSize:20, fontWeight:800, color:'#fff', fontFamily:"'DM Sans',sans-serif" }}>{COP(order.total)}</p>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginTop: 4 }}>
+              {new Date(order.created_at).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </p>
           </div>
           <button onClick={onClose} style={{ background:'rgba(255,255,255,0.06)', border:'none', borderRadius:8, padding:8, cursor:'pointer', color:'rgba(255,255,255,0.6)' }}><X size={16}/></button>
         </div>
 
         {/* Cliente */}
         <div style={{ background:'#0f1120', borderRadius:12, padding:16, border:'1px solid rgba(255,255,255,0.06)' }}>
-          <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:10, fontFamily:"'DM Sans',sans-serif" }}>Cliente</p>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+            <p style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.3)', textTransform:'uppercase', letterSpacing:'0.08em', fontFamily:"'DM Sans',sans-serif" }}>Cliente</p>
+            {whatsappPhone && (
+              <a href={`https://wa.me/57${whatsappPhone}?text=${whatsappMsg}`} target="_blank" rel="noopener noreferrer"
+                style={{ display:'flex', alignItems:'center', gap:6, background:'rgba(37,211,102,0.1)', color:'#25d366', border:'1px solid rgba(37,211,102,0.2)', padding:'4px 10px', borderRadius:8, textDecoration:'none', fontSize:11, fontWeight:700, fontFamily:"'DM Sans',sans-serif" }}>
+                WhatsApp
+              </a>
+            )}
+          </div>
           <p style={{ fontSize:14, fontWeight:700, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif" }}>{order.shipping_name}</p>
           <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', fontFamily:"'DM Sans',sans-serif", marginTop:3 }}>{order.shipping_email}</p>
           <p style={{ fontSize:13, color:'rgba(255,255,255,0.4)', fontFamily:"'DM Sans',sans-serif", marginTop:3 }}>{order.shipping_phone}</p>
-          {order.shipping_address && <p style={{ fontSize:12, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginTop:6 }}>
-            {(order.shipping_address as any).address_line1}, {(order.shipping_address as any).city}, {(order.shipping_address as any).department}
-          </p>}
+          {order.shipping_address && (
+            <div style={{ marginTop:8, padding:'10px', background:'rgba(255,255,255,0.02)', borderRadius:8, border:'1px solid rgba(255,255,255,0.04)' }}>
+              <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginBottom:2 }}>Dirección detallada:</p>
+              <p style={{ fontSize:12, color:'rgba(255,255,255,0.6)', fontFamily:"'DM Sans',sans-serif", lineHeight: 1.4 }}>
+                {(order.shipping_address as any).address_line1}
+                {(order.shipping_address as any).address_line2 && `, ${(order.shipping_address as any).address_line2}`}
+                <br/>
+                Barrio: {(order.shipping_address as any).neighborhood || 'No especificado'}
+                <br/>
+                Ciudad: {(order.shipping_address as any).city}, {(order.shipping_address as any).department}
+                <br/>
+                Notas: {(order.shipping_address as any).notes || 'Ninguna'}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Pago Bold */}
         {boldStatus && (
           <div style={{ padding:'8px 14px', borderRadius:8, background: boldStatus==='APPROVED'?'rgba(52,211,153,0.09)':boldStatus==='PENDING'?'rgba(251,191,36,0.09)':'rgba(248,113,113,0.09)', display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ fontSize:12, fontWeight:700, color: boldStatus==='APPROVED'?'#34d399':boldStatus==='PENDING'?'#fbbf24':'#f87171', fontFamily:"'DM Sans',sans-serif" }}>Bold: {boldStatus}</span>
+            <span style={{ fontSize:12, fontWeight:700, color: boldStatus==='APPROVED'?'#34d399':boldStatus==='PENDING'?'#fbbf24':'#f87171', fontFamily:"'DM Sans',sans-serif" }}>Pago Bold: {boldStatus}</span>
+          </div>
+        )}
+        
+        {/* Método de Envío */}
+        {order.shipping_method && (
+          <div style={{ padding:'8px 14px', borderRadius:8, background: 'rgba(125,164,255,0.09)', border:'1px solid rgba(125,164,255,0.1)', display:'flex', alignItems:'center', gap:8 }}>
+            <Truck size={14} style={{ color:'#7da4ff' }}/>
+            <span style={{ fontSize:12, fontWeight:700, color: '#7da4ff', fontFamily:"'DM Sans',sans-serif" }}>Transportadora (Cotizada): {order.shipping_method.split('|')[1] || order.shipping_method}</span>
           </div>
         )}
 
@@ -590,10 +518,14 @@ const OrderDetailPanel = ({ order, onClose, onStatusUpdate }: { order: Order; on
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {(order.order_items||[]).map((item:any)=>(
                 <div key={item.id} style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  {item.product_image && <img src={item.product_image} alt={item.product_name} style={{ width:36, height:36, borderRadius:6, objectFit:'cover', border:'1px solid rgba(255,255,255,0.07)' }}/>}
+                  {item.product_image && <img src={item.product_image} alt={item.product_name} style={{ width:40, height:40, borderRadius:6, objectFit:'cover', border:'1px solid rgba(255,255,255,0.07)' }}/>}
                   <div style={{ flex:1, minWidth:0 }}>
                     <p style={{ fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.8)', fontFamily:"'DM Sans',sans-serif", whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{item.product_name}</p>
-                    <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif" }}>x{item.quantity} · {COP(item.unit_price)}</p>
+                    <p style={{ fontSize:11, color:'rgba(255,255,255,0.3)', fontFamily:"'DM Sans',sans-serif", marginTop: 2 }}>
+                      x{item.quantity} · {COP(item.unit_price)}
+                      {item.size && <span style={{ marginLeft: 6, background:'rgba(255,255,255,0.05)', padding:'2px 6px', borderRadius:4 }}>Talla: {item.size}</span>}
+                      {item.color && <span style={{ marginLeft: 6, background:'rgba(255,255,255,0.05)', padding:'2px 6px', borderRadius:4 }}>Color: {item.color}</span>}
+                    </p>
                   </div>
                   <p style={{ fontSize:13, fontWeight:700, color:'#fff', fontFamily:"'DM Sans',sans-serif" }}>{COP(item.subtotal)}</p>
                 </div>

@@ -271,7 +271,7 @@ async function handleWebhook(rawBody: string, headers: Headers) {
 
     console.log(`✅ Pedido ${orderId} APPROVED. Guía en proceso.`);
 
-  } else if (['DECLINED', 'ERROR', 'VOIDED'].includes(boldStatus)) {
+  } else if (['DECLINED', 'ERROR', 'VOIDED', 'REJECTED', 'FAILED'].includes(boldStatus)) {
     await supabase
       .from('orders')
       .update({ status: 'cancelled' })
