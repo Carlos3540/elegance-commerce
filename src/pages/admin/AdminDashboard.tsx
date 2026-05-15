@@ -35,30 +35,7 @@ const StarDisplay = ({ value, size = 14 }: { value: number; size?: number }) => 
   </div>
 );
 
-const StatCard = ({ label, value, change, positive, icon: Icon, delay }: any) => (
-  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-    style={{ background: "#0f1120", border: "1px solid rgba(255,255,255,0.065)", borderRadius: 18, padding: "24px 26px" }}>
-    <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 18 }}>
-      <div style={{ width: 44, height: 44, borderRadius: 12, background: "rgba(99,153,255,0.09)", border: "1px solid rgba(99,153,255,0.14)", display: "flex", alignItems: "center", justifyContent: "center", color: "#7da4ff" }}><Icon size={18} /></div>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, color: positive ? "#34d399" : "#f87171", background: positive ? "rgba(52,211,153,0.09)" : "rgba(248,113,113,0.09)", padding: "4px 10px", borderRadius: 8, fontFamily: "'DM Sans', sans-serif" }}>
-        {positive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />} {change}%
-      </div>
-    </div>
-    <p style={{ fontSize: 30, fontWeight: 800, color: "#fff", fontFamily: "'DM Sans', sans-serif", letterSpacing: "-0.04em", lineHeight: 1 }}>{value}</p>
-    <p style={{ fontSize: 14, color: "rgba(255,255,255,0.35)", fontFamily: "'DM Sans', sans-serif", marginTop: 8 }}>{label}</p>
-  </motion.div>
-);
 
-const SkeletonCard = () => (
-  <div style={{ background: "#0f1120", border: "1px solid rgba(255,255,255,0.065)", borderRadius: 18, padding: "24px 26px" }}>
-    {[44, 30, 14].map((h, i) => <div key={i} style={{ height: h, width: i === 0 ? 44 : i === 1 ? "60%" : "40%", background: "rgba(255,255,255,0.05)", borderRadius: i === 0 ? 12 : 6, marginBottom: 12 }} />)}
-  </div>
-);
-
-      </motion.div>
-    </div>
-  );
-};
 
 // ─── PRODUCTS MANAGER ─────────────────────────────────────────
 const ProductsManager = () => {
