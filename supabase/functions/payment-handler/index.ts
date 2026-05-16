@@ -274,10 +274,10 @@ async function handleWebhook(rawBody: string, headers: Headers) {
   } else if (['DECLINED', 'ERROR', 'VOIDED', 'REJECTED', 'FAILED'].includes(boldStatus)) {
     await supabase
       .from('orders')
-      .update({ status: 'cancelled' })
+      .delete()
       .eq('id', orderId);
 
-    console.log(`❌ Pedido ${orderId} cancelado — estado Bold: ${boldStatus}`);
+    console.log(`❌ Pedido ${orderId} eliminado — estado Bold: ${boldStatus}`);
   }
   // Cualquier otro estado (PENDING, etc.) → no tocar la orden
 
@@ -378,8 +378,16 @@ serve(async (req) => {
 
   try {
     const contentType = req.headers.get('content-type') ?? '';
+    console.log(`[INIT] Petición recibida: ${req.method} | Content-Type: ${contentType}`);
+    
     if (!contentType.includes('application/json')) {
-      return corsResponse({ error: 'Content-Type debe ser application/json' }, 415);
+      console.warn(`[WARNING] Content-Type no es application/json: ${contentType}`);
+      // Permitimos que continúe si está vacío (algunos webhooks de prueba fallan aquí)
+      if (req.method === 'POST' && contentType === '') {
+        console.log('[WARNING] Content-Type vacío, asumiendo application/json');
+      } else if (!contentType.includes('application/json')) {
+        return corsResponse({ error: 'Content-Type debe ser application/json' }, 415);
+      }
     }
 
     // Leemos el body UNA sola vez como texto para poder tanto
