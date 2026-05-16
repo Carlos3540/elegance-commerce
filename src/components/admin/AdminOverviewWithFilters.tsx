@@ -109,7 +109,7 @@ export const DateFilterPicker: React.FC<{
               <button onClick={()=>{onApplyCustom();setOpen(false);}} style={{padding:'7px 14px',borderRadius:8,background:'#7da4ff',border:'none',color:'#0c0e1a',fontSize:12,fontWeight:800,fontFamily:"'DM Sans',sans-serif",cursor:'pointer',whiteSpace:'nowrap'}}>Aplicar</button>
             </div>
           </div>
-        </motion.div>
+        </div>
       </>)}
     </div>
   );

@@ -1,6 +1,5 @@
 // @ts-nocheck
 // supabase/functions/bold-checkout/index.ts
-// Edge Function Deno — Genera el hash HMAC-SHA256 que Bold requiere para validar la transacción
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 
 const CORS = {
@@ -24,29 +23,18 @@ serve(async (req) => {
     const secretKey = Deno.env.get('BOLD_SECRET_KEY');
     if (!secretKey) throw new Error('BOLD_SECRET_KEY no configurada en Supabase Secrets');
 
-    // Bold calcula el hash con: orderId + amount + currency + secretKey
-    // Formato exacto según documentación Bold Colombia
+    // ✅ Bold requiere SHA-256 simple — NO HMAC
+    // Formato exacto: orderId + amount + currency + secretKey
     const rawString = `${orderId}${amount}${currency}${secretKey}`;
 
     const encoder = new TextEncoder();
-    const keyData = encoder.encode(secretKey);
     const msgData = encoder.encode(rawString);
 
-    // Importar la clave para HMAC-SHA256
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
+    // SHA-256 directo (sin clave HMAC)
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgData);
 
-    const signature = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-
-    // Convertir ArrayBuffer → hex string
-    const hashArray  = Array.from(new Uint8Array(signature));
-    const hashHex    = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    const integrityHash = `${hashHex}`;
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const integrityHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
     console.log(`[bold-checkout] Hash generado para orden ${orderId} | monto ${amount} ${currency}`);
 

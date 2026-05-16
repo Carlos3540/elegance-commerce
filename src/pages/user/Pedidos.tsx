@@ -360,7 +360,6 @@ const OrderCard = ({ order }: { order: any }) => {
             onClick={() => setExpanded(e => !e)}
             style={{
               width: "100%", padding: "12px 24px",
-              borderTop: "1px solid #f3f4f6",
               background: "none", border: "none", borderTop: "1px solid #f3f4f6",
               display: "flex", alignItems: "center", justifyContent: "space-between",
               cursor: "pointer", fontSize: 12, fontWeight: 700, color: "#6b7280",
