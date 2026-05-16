@@ -67,7 +67,7 @@ const CheckoutSuccess: React.FC = () => {
           clearCart();
           setCartCleared(true);
         }
-      } else if (status === 'DECLINED' || status === 'VOIDED' || status === 'ERROR') {
+      } else if (['DECLINED', 'VOIDED', 'ERROR', 'REJECTED', 'FAILED'].includes(status)) {
         setPaymentState('failed');
       } else {
         // PENDING o sin registro aún: puede que el webhook no haya llegado todavía
@@ -103,7 +103,7 @@ const CheckoutSuccess: React.FC = () => {
           if (newStatus === 'APPROVED') {
             setPaymentState('approved');
             if (!cartCleared) { clearCart(); setCartCleared(true); }
-          } else if (['DECLINED', 'VOIDED', 'ERROR'].includes(newStatus)) {
+          } else if (['DECLINED', 'VOIDED', 'ERROR', 'REJECTED', 'FAILED'].includes(newStatus)) {
             setPaymentState('failed');
           }
         }
@@ -183,6 +183,10 @@ const CheckoutSuccess: React.FC = () => {
 
   // ── Pago fallido / rechazado ──────────────────────────────────────
   if (paymentState === 'failed') {
+    const emailSubject = encodeURIComponent(`Problema con pago de Pedido #${orderId?.slice(0, 8).toUpperCase() || 'Desconocido'}`);
+    const emailBody = encodeURIComponent(`Hola equipo de Evolet 96,\n\nMi pago figura como rechazado pero veo un cobro en mi cuenta. Adjunto los datos para revisión:\n\n- Nombre completo: \n- Cédula (CC): \n- Entidad Bancaria: \n- Fecha del pago: ${new Date().toLocaleDateString('es-CO')}\n- Descripción del pedido: Pedido #${orderId?.slice(0, 8).toUpperCase() || 'Desconocido'}\n\n[POR FAVOR ADJUNTAR AQUÍ EL COMPROBANTE DE PAGO]\n\nGracias.`);
+    const supportMailto = `mailto:contactoevolvet.96@gmail.com?subject=${emailSubject}&body=${emailBody}`;
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-4 py-16"
         style={{ background: '#f8f7f5', fontFamily: "'DM Sans', sans-serif" }}>
@@ -190,48 +194,50 @@ const CheckoutSuccess: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl border border-red-100 shadow-xl p-10 max-w-md w-full text-center"
+          className="bg-white rounded-3xl border border-red-100 shadow-xl p-8 sm:p-10 max-w-md w-full text-center"
         >
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-            className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6"
+            initial={{ scale: 3, opacity: 0, rotate: -15 }}
+            animate={{ scale: 1, opacity: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+            className="w-24 h-24 border-4 border-red-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_20px_rgba(239,68,68,0.25)] relative"
           >
-            <XCircle size={40} className="text-red-500" />
+            <div className="absolute inset-0 rounded-full border-4 border-red-500 border-dashed animate-[spin_10s_linear_infinite] opacity-30" />
+            <XCircle size={48} className="text-red-500" strokeWidth={3} />
           </motion.div>
-          <h1 className="text-2xl font-black text-gray-900 mb-2">
-            Pago no completado
+          
+          <h1 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight">
+            Pago Rechazado
           </h1>
-          <p className="text-gray-500 text-sm leading-relaxed mb-6">
-            Bold no pudo procesar tu pago. Puede ser por fondos insuficientes, tarjeta bloqueada,
-            o una interrupción de la red. Tu pedido quedó guardado — no perderás tus datos.
-          </p>
-
-          {boldStatus && (
-            <div className="flex items-center justify-center gap-2 bg-red-50 text-red-700 text-xs font-semibold py-2 px-4 rounded-xl mb-6">
-              <AlertCircle size={13} />
-              Estado Bold: {boldStatus}
-            </div>
-          )}
+          
+          <div className="bg-red-50 text-red-800 rounded-2xl p-4 mb-6 border border-red-100">
+            <p className="text-sm font-semibold mb-2">
+              Bold no pudo procesar tu pago de forma exitosa.
+            </p>
+            <p className="text-xs text-red-700/80 leading-relaxed">
+              Por favor, <strong>revise directamente con su entidad bancaria</strong>. Puede ser por fondos insuficientes, tarjeta bloqueada o rechazo de seguridad por parte del banco.
+            </p>
+          </div>
 
           <div className="flex flex-col gap-3">
-            {/* Si hay orden guardada, ir directo al paso 2 de checkout */}
-            {orderId && (
-              <Link
-                to={`/checkout?retry=${orderId}`}
-                className="flex items-center justify-center gap-2 bg-gray-900 text-white font-black text-xs uppercase tracking-widest py-4 rounded-2xl hover:bg-gray-700 transition-colors"
-              >
-                Reintentar pago <ArrowRight size={14} />
-              </Link>
-            )}
             <Link
               to="/tienda"
-              className="flex items-center justify-center gap-2 bg-gray-50 text-gray-700 font-semibold text-sm py-4 rounded-2xl border border-gray-200 hover:border-gray-400 transition-colors"
+              className="flex items-center justify-center gap-2 bg-gray-900 text-white font-black text-xs uppercase tracking-widest py-4 rounded-2xl hover:bg-gray-700 transition-colors"
             >
               Volver a la tienda
             </Link>
+
+            <a
+              href={supportMailto}
+              className="flex items-center justify-center gap-2 bg-white text-gray-600 font-bold text-xs uppercase tracking-widest py-4 rounded-2xl border-2 border-gray-200 hover:border-gray-900 hover:text-gray-900 transition-colors mt-2"
+            >
+              <Mail size={16} /> Reportar si hubo cobro
+            </a>
           </div>
+
+          <p className="text-[11px] text-gray-400 mt-6 leading-relaxed">
+            Si el dinero fue debitado de tu cuenta, por favor envíanos un correo con el comprobante haciendo clic en el botón superior para realizar la validación manual.
+          </p>
         </motion.div>
       </div>
     );

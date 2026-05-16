@@ -68,11 +68,12 @@ serve(async (req) => {
     );
 
     if (isRejected) {
-      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Cancelando...`);
-      // Cancelar orden
-      await supabase.from('orders').update({ status: 'cancelled' }).eq('id', supaOrderId);
-      // Actualizar pagos_bold para que el UI en tiempo real sepa que falló
+      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Eliminando orden...`);
+      // Actualizar pagos_bold primero para que el UI en tiempo real reciba el evento y muestre el fallo
       await supabase.from('pagos_bold').update({ bold_status: event?.data?.status || 'REJECTED' }).eq('order_id', supaOrderId);
+      
+      // Eliminar orden completamente para que no aparezca en el panel
+      await supabase.from('orders').delete().eq('id', supaOrderId);
       return new Response('ok', { status: 200 });
     }
 
