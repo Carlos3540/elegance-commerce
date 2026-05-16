@@ -1,5 +1,5 @@
 // src/pages/Index.tsx
-import { lazy, Suspense, useRef } from "react";
+import { lazy, Suspense, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ArrowRight, Sparkles, RotateCcw } from "lucide-react";
@@ -47,24 +47,42 @@ const Ticker = () => (
 
 // ── Parallax Hero (Above the fold, optimizado) ──────────────────
 const ParallaxHero = () => {
-  const ref = useRef(null);
+  const ref = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const isMobile = useIsMobile();
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["0%", isMobile ? "15%" : "30%"]);
+
+  // Asegurar que el video intente reproducirse al montar (evita el bug de F5)
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(err => {
+        console.warn("Autoplay bloqueado o falló:", err);
+      });
+    }
+  }, []);
 
   return (
     <section ref={ref} style={{ position: "relative", height: isMobile ? "100svh" : "92vh", overflow: "hidden" }}>
       <motion.div style={{ y, position: "absolute", inset: 0 }}>
         <video 
+          ref={videoRef}
           autoPlay 
           muted 
           loop 
           playsInline 
           poster={optimizeSupabaseImage(bannerPoster, { width: isMobile ? 800 : 1600, quality: 70 })}
-          preload="auto"
+          preload="metadata"
           width="100%"
           height="100%"
-          style={{ width: "100%", height: "115%", objectFit: "cover", filter: "brightness(0.82) contrast(1.12) saturate(1.1)" }}
+          style={{ 
+            width: "100%", 
+            height: "115%", 
+            objectFit: "cover", 
+            filter: "brightness(0.82) contrast(1.12) saturate(1.1)",
+            willChange: "transform",
+            transform: "translate3d(0,0,0)" // Forzar aceleración GPU
+          }}
         >
           <source src={bannerVideo} type="video/mp4" />
         </video>

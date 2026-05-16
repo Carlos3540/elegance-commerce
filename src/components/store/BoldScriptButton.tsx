@@ -22,31 +22,44 @@ export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
   useEffect(() => {
     if (!containerRef.current) return;
     
-    // Limpiar el contenedor por si hay renders múltiples en React
-    containerRef.current.innerHTML = '';
-    
-    const script = document.createElement('script');
-    script.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
-    
-    // Atributos requeridos por Bold para la "Integración Manual" (mediante script HTML)
-    // Se usa 'dark-L' como valor del atributo data-bold-button para tener estilo oscuro y tamaño grande
-    script.setAttribute('data-bold-button', 'dark-L');
-    script.setAttribute('data-api-key', apiKey);
-    script.setAttribute('data-order-id', orderId);
-    script.setAttribute('data-currency', currency);
-    script.setAttribute('data-amount', String(Math.round(amount)));
-    script.setAttribute('data-integrity-signature', integritySignature);
-    script.setAttribute('data-redirection-url', redirectionUrl);
-    script.setAttribute('data-render-mode', 'embedded');
-    
-    // Insertar el script en el contenedor
-    containerRef.current.appendChild(script);
+    let isMounted = true;
+    const container = containerRef.current;
+
+    const init = async () => {
+      try {
+        // Usar el cargador centralizado para evitar duplicados
+        const { cargarScriptBold } = await import('@/services/boldPayment');
+        await cargarScriptBold();
+        
+        if (!isMounted) return;
+
+        // Limpiar el contenedor
+        container.innerHTML = '';
+        
+        const script = document.createElement('script');
+        script.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+        
+        // Atributos requeridos por Bold para la "Integración Manual"
+        script.setAttribute('data-bold-button', 'dark-L');
+        script.setAttribute('data-api-key', apiKey);
+        script.setAttribute('data-order-id', orderId);
+        script.setAttribute('data-currency', currency);
+        script.setAttribute('data-amount', String(Math.round(amount)));
+        script.setAttribute('data-integrity-signature', integritySignature);
+        script.setAttribute('data-redirection-url', redirectionUrl);
+        script.setAttribute('data-render-mode', 'embedded');
+        
+        container.appendChild(script);
+      } catch (err) {
+        console.error('[BoldScriptButton] Error initializing Bold SDK:', err);
+      }
+    };
+
+    init();
 
     return () => {
-      // Limpieza al desmontar
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
+      isMounted = false;
+      container.innerHTML = '';
     };
   }, [apiKey, orderId, currency, amount, integritySignature, redirectionUrl]);
 

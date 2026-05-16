@@ -122,7 +122,7 @@ const BOLD_SCRIPT_ATTR = 'data-bold-sdk-evolet';
  *     → espera con polling (50 ms, timeout 8 s).
  *  4. Nunca llama removeChild ni reemplaza nodos existentes.
  */
-function cargarScriptBold(): Promise<void> {
+export function cargarScriptBold(): Promise<void> {
   // Guardia 1: SDK ya disponible
   if (typeof (window as any).BoldCheckout !== 'undefined') {
     return Promise.resolve();

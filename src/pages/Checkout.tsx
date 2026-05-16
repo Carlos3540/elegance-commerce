@@ -73,6 +73,7 @@ const Checkout: React.FC = () => {
   // ── Refs ───────────────────────────────────────────────────────
   const citySelectRef = useRef<HTMLDivElement>(null);
   const orderRef = useRef<{ orderId: string; boldOrderId: string } | null>(null);
+  const isPreparingRef = useRef(false); // Guard para evitar llamadas concurrentes
 
   // ── Steps ──────────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -149,20 +150,27 @@ const Checkout: React.FC = () => {
     if (loadingShipping)   return;
     if (!cheapest)         return;
     if (!user)             return;
-    if (!orderRef.current) return;
-
+    if (isPreparingRef.current) return;
+    
     try {
+      isPreparingRef.current = true;
       setPreparingBold(true);
       setCanPay(false);
       setFormError(null);
 
-      // 1. Pedir firma HMAC al servidor con el total actualizado
-      const { integrity_hash } = await pedirFirmaBold(
+      // 1. Pedir firma HMAC con un timeout de seguridad (10s)
+      const firmaPromise = pedirFirmaBold(
         orderRef.current.boldOrderId,
         total,
         subtotal,
         shippingCost,
       );
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado al preparar el pago. Reintenta.')), 12000)
+      );
+
+      const { integrity_hash } = await Promise.race([firmaPromise, timeoutPromise]) as any;
 
       // 2. Guardar el hash en estado para renderizar el botón de Bold
       setBoldHash(integrity_hash);
@@ -173,6 +181,7 @@ const Checkout: React.FC = () => {
       setCanPay(false);
     } finally {
       setPreparingBold(false);
+      isPreparingRef.current = false;
     }
   }, [step, loadingShipping, cheapest, user, subtotal, form.email, form.full_name, form.phone, form.document_number]);
 
