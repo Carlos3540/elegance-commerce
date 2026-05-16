@@ -171,12 +171,12 @@ async function tryAllEndpoints(
   }
 
   const endpoints = [
-    // 1. V2 - Ruta estandarizada
-    { url: `${MP_BASE}/api/v2/quotes/shipping`,  code: destCode },
-    // 2. V1 - Ruta Legacy (la que te dio HTTP 200 en el log)
+    // 1. V2 - Ruta estandarizada correcta
+    { url: `${MP_BASE}/v2/quotes`,               code: destCode },
+    // 2. V1 - Ruta Legacy (funciona como respaldo)
     { url: `${MP_BASE}/quoteShipping`,           code: destCode },
     // 3. V2 - Ruta con código DANE corto
-    { url: `${MP_BASE}/api/v2/quotes/shipping`,  code: normDivipola5(destCode) },
+    { url: `${MP_BASE}/v2/quotes`,               code: normDivipola5(destCode) },
   ];
 
   let lastError = 'Sin intentos realizados';

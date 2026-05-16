@@ -652,7 +652,7 @@ const Checkout: React.FC = () => {
                         apiKey={import.meta.env.VITE_BOLD_API_KEY as string}
                         orderId={orderRef.current.boldOrderId}
                         currency="COP"
-                        amount={total}
+                        amount={Math.round(total)}
                         integritySignature={boldHash}
                         redirectionUrl={`${window.location.origin}/checkout/exitoso?order=${orderRef.current.orderId}`}
                       />
