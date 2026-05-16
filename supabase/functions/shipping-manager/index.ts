@@ -171,12 +171,10 @@ async function tryAllEndpoints(
   }
 
   const endpoints = [
-    // 1. V2 - Ruta estandarizada correcta
-    { url: `${MP_BASE}/v2/quotes`,               code: destCode },
-    // 2. V1 - Ruta Legacy (funciona como respaldo)
-    { url: `${MP_BASE}/quoteShipping`,           code: destCode },
-    // 3. V2 - Ruta con código DANE corto
-    { url: `${MP_BASE}/v2/quotes`,               code: normDivipola5(destCode) },
+    // 1. V2 - Ruta oficial (api-v2.mipaquete.com/quoteShipping)
+    { url: `${MP_BASE}/api/v2/shipping/quotes`,           code: destCode },
+    // 2. V2 - Ruta con código DANE corto
+    { url: `${MP_BASE}/api/v2/shipping/quotes`,           code: normDivipola5(destCode) },
   ];
 
   let lastError = 'Sin intentos realizados';
