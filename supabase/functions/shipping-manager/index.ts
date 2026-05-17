@@ -136,15 +136,13 @@ async function tryAllEndpoints(
   declaredValue: number,
 ): Promise<{ rates: any[]; endpointUsed: string }> {
 
-  // ✅ FIX: Campo correcto es 'length', NO 'large'. Garantizar valores >= 1.
   const sharedPayload = {
     originLocationCode:  originCode,
     destinyLocationCode: destCode,
     weight:       Math.max(1, Math.ceil(weight)),
     height:       Math.max(1, Math.ceil(height)),
     width:        Math.max(1, Math.ceil(width)),
-    length:       Math.max(1, Math.ceil(length)),   // ← campo correcto V2
-    large:        Math.max(1, Math.ceil(length)),   // ← requerido en V1
+    large:        Math.max(1, Math.ceil(length)),
     quantity:     Math.max(1, quantity),
     declaredValue: Math.max(0, declaredValue),
     saleValue:    0,
@@ -172,9 +170,7 @@ async function tryAllEndpoints(
 
   const endpoints = [
     // 1. V2 - Ruta oficial (api-v2.mipaquete.com/quoteShipping)
-    { url: `${MP_BASE}/api/v2/shipping/quotes`,           code: destCode },
-    // 2. V2 - Ruta con código DANE corto
-    { url: `${MP_BASE}/api/v2/shipping/quotes`,           code: normDivipola5(destCode) },
+    { url: `${MP_BASE}/api/quoteShipping`,           code: destCode },
   ];
 
   let lastError = 'Sin intentos realizados';
@@ -383,7 +379,7 @@ async function handleCreateGuide(body: Record<string, any>) {
     reference2: reference ?? order_id, cashOnDelivery: false,
   };
 
-  const mpRes = await fetch(`${MP_BASE}/deliveries`, {
+  const mpRes = await fetch(`${MP_BASE}/api/v2/deliveries`, {
     method: 'POST', headers: mpHeaders(), body: JSON.stringify(guidePayload),
   });
 

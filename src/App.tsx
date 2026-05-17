@@ -29,6 +29,7 @@ const Checkout = lazy(() => import("./pages/Checkout"));
 const CheckoutSuccess = lazy(() => import("./pages/CheckoutSuccess"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const BlogPostPage = lazy(() => import("@/pages/BlogPost"));
+const Maintenance = lazy(() => import("./pages/Maintenance"));
 
 // Protección de rutas
 import AdminRoute from "@/components/auth/AdminRoute";
@@ -49,6 +50,15 @@ const PageLoader = () => (
 const AppContent = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith("/admin");
+  const isMaintenance = import.meta.env.VITE_MAINTENANCE_MODE === "true";
+
+  if (isMaintenance && !isAdmin) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <Maintenance />
+      </Suspense>
+    );
+  }
 
   return (
     <>
