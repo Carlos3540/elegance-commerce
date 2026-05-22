@@ -50,7 +50,7 @@ const StefaniaCEO = () => {
             <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: "0.25em", color: "#C4395A", textTransform: "uppercase", fontFamily: "'DM Sans', sans-serif" }}>Nuestra Directora</span>
           </motion.div>
           <motion.h2 initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} style={{ fontSize: isMobile ? "clamp(34px, 8vw, 48px)" : "clamp(42px, 5vw, 68px)", fontWeight: 900, color: "#fff", fontFamily: "'Playfair Display', serif", fontStyle: "italic", lineHeight: 1.1, marginBottom: 32 }}>
-            Stefania
+            Stephanie
           </motion.h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <motion.p initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} style={{ fontSize: isMobile ? 16 : 18, color: "rgba(255,255,255,0.7)", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.7, fontWeight: 300 }}>

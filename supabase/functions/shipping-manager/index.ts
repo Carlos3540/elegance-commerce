@@ -1,10 +1,10 @@
 // @ts-nocheck
 // supabase/functions/shipping-manager/index.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// v3 — Estrategia multi-endpoint con fallback automático.
-//       Error original: "MP-Service_Not_Found" → el endpoint /quoteShipping
-//       devuelve 404. Esta versión prueba 3 endpoints en secuencia y toma
-//       la primera respuesta válida, imprimiendo cuál funcionó en los logs.
+// v4 — Corrección del campo de largo del paquete: API V2 de mipaquete.com
+//       exige el campo "length" (NO "large") en el payload de /quoteShipping.
+//       La v3 identificó el problema en el comentario pero nunca aplicó el fix
+//       en el objeto sharedPayload — este parche lo corrige definitivamente.
 // ─────────────────────────────────────────────────────────────────────────────
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -123,8 +123,10 @@ function normDivipola5(code: string): string {
 }
 
 // ── Estrategia multi-endpoint ─────────────────────────────────────────────────
-// La API V2 de MiPaquete requiere el campo 'length' (NO 'large').
-// Error original: HTTP 400 → "length is required or its format is not valid"
+// La API V2 de mipaquete.com exige el campo "length" (NO "large") en el
+// payload de /quoteShipping. Enviar "large" provoca HTTP 404:
+// "The service is not valid in API V2 mipaquete.com".
+// Referencia: Postman collection oficial (variable uriApiV2).
 async function tryAllEndpoints(
   originCode: string,
   destCode: string,
@@ -139,13 +141,13 @@ async function tryAllEndpoints(
   const sharedPayload = {
     originLocationCode:  originCode,
     destinyLocationCode: destCode,
-    weight:       Math.max(1, Math.ceil(weight)),
-    height:       Math.max(1, Math.ceil(height)),
-    width:        Math.max(1, Math.ceil(width)),
-    large:        Math.max(1, Math.ceil(length)),
-    quantity:     Math.max(1, quantity),
+    weight:        Math.max(1, Math.ceil(weight)),
+    height:        Math.max(1, Math.ceil(height)),
+    width:         Math.max(1, Math.ceil(width)),
+    length:        Math.max(1, Math.ceil(length)),   // ✅ FIX: API V2 requiere "length", no "large"
+    quantity:      Math.max(1, quantity),
     declaredValue: Math.max(0, declaredValue),
-    saleValue:    0,
+    saleValue:     0,
   };
 
   console.log('[MP] Payload enviado:', JSON.stringify(sharedPayload));
