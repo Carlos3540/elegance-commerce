@@ -313,17 +313,10 @@ export async function pedirFirmaBold(
   shippingCost: number,
   currency:     'COP' = 'COP'
 ): Promise<BoldSignatureResponse> {
-  const totalInt    = Math.round(total);
-  const subtotalInt = Math.round(subtotal);
-  const shipInt     = Math.round(shippingCost);
-
   const { data, error } = await supabase.functions.invoke('bold-checkout', {
     body: {
-      action:        'sign',
-      bold_order_id: boldOrderId,
-      amount:        totalInt,
-      subtotal:      subtotalInt,
-      shipping_cost: shipInt,
+      orderId: boldOrderId,
+      amount:  Math.round(total),
       currency,
     },
   });
