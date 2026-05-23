@@ -72,7 +72,10 @@ const Checkout: React.FC = () => {
 
   // ── Refs ───────────────────────────────────────────────────────
   const citySelectRef = useRef<HTMLDivElement>(null);
-  const orderRef = useRef<{ orderId: string; boldOrderId: string } | null>(null);
+  const orderRef = useRef<{ 
+    orderId: string;          // UUID Supabase
+    boldOrderId: string;      // EV-...
+  } | null>(null);
   const isPreparingRef = useRef(false); // Guard para evitar llamadas concurrentes
 
   // ── Steps ──────────────────────────────────────────────────────
@@ -664,6 +667,7 @@ const Checkout: React.FC = () => {
                         amount={Math.round(total)}
                         integritySignature={boldHash}
                         redirectionUrl={`${window.location.origin}/checkout/exitoso?order=${orderRef.current.orderId}`}
+                        supabaseOrderId={orderRef.current.orderId}
                       />
                     ) : null}
 

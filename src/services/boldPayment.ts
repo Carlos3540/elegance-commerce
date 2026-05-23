@@ -317,7 +317,7 @@ export async function pedirFirmaBold(
   const subtotalInt = Math.round(subtotal);
   const shipInt     = Math.round(shippingCost);
 
-  const { data, error } = await supabase.functions.invoke('payment-handler', {
+  const { data, error } = await supabase.functions.invoke('bold-checkout', {
     body: {
       action:        'sign',
       bold_order_id: boldOrderId,

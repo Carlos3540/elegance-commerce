@@ -1,10 +1,13 @@
 // @ts-nocheck
 // supabase/functions/shipping-manager/index.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// v4 — Corrección del campo de largo del paquete: API V2 de mipaquete.com
-//       exige el campo "length" (NO "large") en el payload de /quoteShipping.
-//       La v3 identificó el problema en el comentario pero nunca aplicó el fix
-//       en el objeto sharedPayload — este parche lo corrige definitivamente.
+// v5 — Corrección del host del endpoint de cotización:
+//       La API V2 de mipaquete.com usa el host "api-v2.mipaquete.com" sin el
+//       prefijo de ruta "/api/". La v4 tenía el payload correcto (length) pero
+//       seguía apuntando a "api.mipaquete.com/api/quoteShipping" → HTTP 404.
+//       Se agrega MP_V2_BASE y se actualiza el array de endpoints en
+//       tryAllEndpoints para usar "https://api-v2.mipaquete.com/quoteShipping".
+//       Ref: curl oficial → https://api-v2.mipaquete.com/quoteShipping
 // ─────────────────────────────────────────────────────────────────────────────
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -91,7 +94,8 @@ function consolidarPaquete(items: any[]) {
   };
 }
 
-const MP_BASE     = 'https://api.mipaquete.com';
+const MP_BASE     = 'https://api.mipaquete.com';       // Base heredada (deliveries / otros endpoints)
+const MP_V2_BASE  = 'https://api-v2.mipaquete.com';    // ✅ Host correcto para cotizaciones V2
 
 // ── Headers ───────────────────────────────────────────────────────────────────
 function mpHeaders() {
@@ -171,8 +175,9 @@ async function tryAllEndpoints(
   }
 
   const endpoints = [
-    // 1. V2 - Ruta oficial (api-v2.mipaquete.com/quoteShipping)
-    { url: `${MP_BASE}/api/quoteShipping`,           code: destCode },
+    // ✅ V2 - Host y ruta correctos según documentación oficial de mipaquete.com
+    // Curl de referencia: https://api-v2.mipaquete.com/quoteShipping
+    { url: `${MP_V2_BASE}/quoteShipping`, code: destCode },
   ];
 
   let lastError = 'Sin intentos realizados';

@@ -7,6 +7,7 @@ interface BoldScriptButtonProps {
   amount: number;
   integritySignature: string;
   redirectionUrl: string;
+  supabaseOrderId: string;
 }
 
 export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
@@ -16,6 +17,7 @@ export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
   amount,
   integritySignature,
   redirectionUrl,
+  supabaseOrderId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -46,6 +48,9 @@ export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
         script.setAttribute('data-currency', currency);
         script.setAttribute('data-amount', String(Math.round(amount)));
         script.setAttribute('data-integrity-signature', integritySignature);
+        script.setAttribute('data-metadata', JSON.stringify({
+          orderId: supabaseOrderId
+        }));
         script.setAttribute('data-redirection-url', redirectionUrl);
         script.setAttribute('data-render-mode', 'embedded');
         
@@ -61,7 +66,7 @@ export const BoldScriptButton: React.FC<BoldScriptButtonProps> = ({
       isMounted = false;
       container.innerHTML = '';
     };
-  }, [apiKey, orderId, currency, amount, integritySignature, redirectionUrl]);
+  }, [apiKey, orderId, currency, amount, integritySignature, redirectionUrl, supabaseOrderId]);
 
   return <div ref={containerRef} className="w-full flex justify-center items-center overflow-hidden min-h-[60px]" />;
 };

@@ -12,14 +12,22 @@ const CORS = {
 };
 
 serve(async (req) => {
+  console.log(`[bold-webhook] ⚡ NUEVA INVOCACIÓN - Method: ${req.method}, URL: ${req.url}`);
+  console.log(`[bold-webhook] Headers recibidos:`, Object.fromEntries(req.headers.entries()));
+
   if (req.method === 'OPTIONS') {
+    console.log('[bold-webhook] Respondiendo a preflight OPTIONS');
     return new Response('ok', { headers: CORS });
   }
 
   try {
     // ── 1. Leer cuerpo y verificar firma de Bold ─────────────────────────────
     const rawBody    = await req.text();
+    // 1. Log del cuerpo recibido para ver qué está enviando Bold (antes de validar firma)
+    console.log("Cuerpo recibido:", rawBody);
+
     const boldSig    = req.headers.get('x-bold-signature') ?? '';
+    // 2. Usar BOLD_SECRET_KEY explícitamente para validar la firma (es la misma llave global en Bold)
     const secretKey  = Deno.env.get('BOLD_SECRET_KEY') ?? '';
 
     // Verificación HMAC-SHA256 del webhook
@@ -68,12 +76,12 @@ serve(async (req) => {
     );
 
     if (isRejected) {
-      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Eliminando orden...`);
+      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Actualizando estado a failed...`);
       // Actualizar pagos_bold primero para que el UI en tiempo real reciba el evento y muestre el fallo
       await supabase.from('pagos_bold').update({ bold_status: event?.data?.status || 'REJECTED' }).eq('order_id', supaOrderId);
       
-      // Eliminar orden completamente para que no aparezca en el panel
-      await supabase.from('orders').delete().eq('id', supaOrderId);
+      // En lugar de eliminar la orden, la marcamos como fallida
+      await supabase.from('orders').update({ status: 'failed' }).eq('id', supaOrderId);
       return new Response('ok', { status: 200 });
     }
 
