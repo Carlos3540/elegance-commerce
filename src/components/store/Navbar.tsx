@@ -9,8 +9,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserMenu from "@/components/auth/UserMenu";
 import LoginDialog from "@/components/auth/LoginDialog";
 import logoImg from "@/assets/logo.png";
-import logo2x from "@/assets/logo-2x.jpeg";
-import logo4x from "@/assets/logo-4x.jpeg";
 
 const NAV_LINKS = [
   { label: "Inicio",   path: "/" },
@@ -248,27 +246,27 @@ const Navbar = () => {
               justifyContent: "flex-start",
             }}>
               <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
-                <picture>
+                <div style={{ height: Math.round(logoHeight * 1.12), display: "flex", alignItems: "center" }}>
                   <img
                     src={logoImg}
-                    srcSet={`${logo2x} 2x, ${logo4x} 4x`}
                     alt="EVOLET"
                     fetchPriority="high"
                     loading="eager"
-                    style={{
-                      height: logoHeight,
-                      width: "auto",
-                      transition: "all 0.4s cubic-bezier(0.23,1,0.32,1)",
-                      filter: isTransparent ? "brightness(0) invert(1)" : "none",
-                      padding: "4px 0",
-                      objectFit: "contain",
-                      maxWidth: "300px",
-                      imageRendering: "auto",
-                      transform: "translateZ(0)",
-                      willChange: "transform",
-                    }}
+                    decoding="async"
+                      style={{
+                        height: "100%",
+                        width: "auto",
+                        transition: "all 0.3s ease",
+                        filter: isTransparent ? "brightness(0) invert(1)" : "none",
+                        padding: "2px 0",
+                        objectFit: "contain",
+                        maxWidth: "230px",
+                        imageRendering: "auto",
+                        transform: "translateZ(0)",
+                        willChange: "transform",
+                      }}
                   />
-                </picture>
+                </div>
               </Link>
             </div>
 
