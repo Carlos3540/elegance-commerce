@@ -9,6 +9,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import UserMenu from "@/components/auth/UserMenu";
 import LoginDialog from "@/components/auth/LoginDialog";
 import logoImg from "@/assets/logo.png";
+import logo2x from "@/assets/logo-2x.jpeg";
+import logo4x from "@/assets/logo-4x.jpeg";
 
 const NAV_LINKS = [
   { label: "Inicio",   path: "/" },
@@ -247,16 +249,9 @@ const Navbar = () => {
             }}>
               <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
                 <picture>
-                  <source
-                    srcSet={`${logoImg.replace('.png', '@2x.webp')} 2x, ${logoImg.replace('.png', '@3x.webp')} 3x`}
-                    type="image/webp"
-                  />
                   <img
                     src={logoImg}
-                    srcSet={`
-                      ${logoImg.replace('.png', '@2x.png')} 2x,
-                      ${logoImg.replace('.png', '@3x.png')} 3x
-                    `}
+                    srcSet={`${logo2x} 2x, ${logo4x} 4x`}
                     alt="EVOLET"
                     fetchPriority="high"
                     loading="eager"
