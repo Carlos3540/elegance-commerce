@@ -46,7 +46,6 @@ const saveGuestCart = (items: GuestItem[]) => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Esperamos tanto el user como el profile — cuando profile existe el trigger ya corrió
   const { user, profile } = useAuth();
   const [cartId, setCartId]       = useState<string | null>(null);
   const [items, setItems]         = useState<(CartItem | GuestItem)[]>([]);
@@ -55,15 +54,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isGuest = !user;
 
+  // 💥 NUEVO: Función explícita para limpiar el localStorage de forma segura
+  const clearGuestCart = useCallback(() => {
+    try {
+      localStorage.removeItem(GUEST_CART_KEY);
+    } catch (e) {
+      console.warn('CartContext: No se pudo limpiar localStorage:', e);
+    }
+  }, []);
+
   // ── GUEST: cargar desde localStorage ─────────────────────────
   const loadGuest = useCallback(() => {
     setItems(loadGuestCart());
   }, []);
 
   // ── SUPABASE: obtener o crear carrito ─────────────────────────
-  // NOTA: usamos .maybeSingle() para evitar el error 406 cuando no existe fila
   const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
-    // 1. Buscar carrito existente (maybeSingle → null si no existe, sin error 406)
     const { data: existing, error: findErr } = await supabase
       .from('carts')
       .select('id')
@@ -76,7 +82,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     if (existing) return existing.id;
 
-    // 2. Crear carrito — el perfil ya existe porque esperamos a que `profile` no sea null
     const { data: newCart, error: insertErr } = await supabase
       .from('carts')
       .insert({ user_id: userId })
@@ -109,8 +114,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // ── SUPABASE: migrar carrito guest al loguearse ───────────────
-  const migrateGuestCart = useCallback(async (cId: string) => {
-    const guestItems = loadGuestCart();
+  // 💥 MODIFICADO: Ahora recibe los items directamente desde la memoria
+  const migrateGuestCart = useCallback(async (cId: string, guestItems: GuestItem[]) => {
     if (guestItems.length === 0) return;
 
     for (const gi of guestItems) {
@@ -137,15 +142,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
       }
     }
-    localStorage.removeItem(GUEST_CART_KEY);
   }, []);
 
   // ── Inicializar ───────────────────────────────────────────────
-  // Dependemos de `profile` (no solo de `user`) para garantizar que el trigger
-  // de Supabase ya creó el registro en 'profiles' antes de intentar crear el carrito.
   useEffect(() => {
     if (!user || !profile) {
-      // Sin usuario o perfil: modo guest
       if (!user) {
         setCartId(null);
         loadGuest();
@@ -158,6 +159,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const init = async () => {
       setIsLoading(true);
       try {
+        // 💥 NUEVO & CRÍTICO: Capturamos los datos locales INMEDIATAMENTE al autenticarse
+        const guestItemsToMigrate = loadGuestCart();
+        
+        // 💥 NUEVO: Limpiamos el localStorage al instante para evitar ejecuciones duplicadas
+        if (guestItemsToMigrate.length > 0) {
+          clearGuestCart();
+        }
+
         const cId = await getOrCreateCart(user.id);
         if (!cId) {
           setIsLoading(false);
@@ -165,8 +174,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setCartId(cId);
 
-        // Migrar guest items si los hay
-        await migrateGuestCart(cId);
+        // 💥 MODIFICADO: Migramos usando la copia segura que guardamos en memoria
+        if (guestItemsToMigrate.length > 0) {
+          await migrateGuestCart(cId, guestItemsToMigrate);
+        }
+        
         await fetchItems(cId);
 
         // Realtime
@@ -187,12 +199,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     init();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, profile, getOrCreateCart, fetchItems, loadGuest, migrateGuestCart]);
+  }, [user, profile, getOrCreateCart, fetchItems, loadGuest, migrateGuestCart, clearGuestCart]);
 
   // ── Agregar producto ──────────────────────────────────────────
   const addItem = useCallback(async (product: Product, qty: number = 1) => {
-
-    // ── GUEST ──
     if (isGuest) {
       const current = loadGuestCart();
       const idx = current.findIndex(i => i.product_id === product.id);
@@ -213,7 +223,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    // ── USUARIO LOGUEADO ──
     if (!cartId) return;
 
     const existing = items.find(i => i.product_id === product.id);
@@ -254,7 +263,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     setIsOpen(true);
-  }, [isGuest, cartId, items]);
+  }, [isGuest, cartId, items, fetchItems]);
 
   // ── Eliminar item ─────────────────────────────────────────────
   const removeItem = useCallback(async (cartItemId: string) => {
@@ -299,7 +308,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Vaciar carrito ────────────────────────────────────────────
   const clearCart = useCallback(async () => {
     if (isGuest) {
-      localStorage.removeItem(GUEST_CART_KEY);
+      clearGuestCart(); // 💥 MODIFICADO: Uso de la función limpia para consistencia
       setItems([]);
       return;
     }
@@ -312,7 +321,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (error) throw error;
     setItems([]);
-  }, [isGuest, cartId]);
+  }, [isGuest, cartId, clearGuestCart]);
 
   // ── Cálculos ──────────────────────────────────────────────────
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
