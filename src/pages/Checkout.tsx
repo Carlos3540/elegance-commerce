@@ -31,6 +31,7 @@ import { BoldScriptButton } from '@/components/store/BoldScriptButton';
 import { useCart }          from '@/context/CartContext';
 import { useAuth }          from '@/context/AuthContext';
 import { useShippingQuote } from '@/hooks/useShippingQuote';
+import { useOrderStatusListener } from '@/hooks/useOrderStatusListener';
 import { DEPARTAMENTOS }    from '@/data/divipola';
 import {
   crearOrdenEnSupabase,
@@ -80,6 +81,9 @@ const Checkout: React.FC = () => {
 
   // ── Steps ──────────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
+
+  // ── ID de la orden activa (state reactivo para el hook Realtime) ──
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
 
   // ── Estados de pago ────────────────────────────────────────────
   const [isProcessing, setProcessing] = useState(false);
@@ -131,6 +135,20 @@ const Checkout: React.FC = () => {
       }
     }
   }, [user, items, navigate, isLoading]);
+
+  // ── Realtime: escucha cambios de status de la orden en paso 2 ──
+  // Cuando Bold procesa el pago, el webhook actualiza orders.status.
+  // Este hook muestra toast inmediato y redirige si el pago es aprobado.
+  useOrderStatusListener({
+    orderId:    currentOrderId,
+    enabled:    step === 2,
+    onRejected: () => {
+      // Permite que el cliente reintente: resetea el estado de Bold
+      setCanPay(false);
+      setBoldHash(null);
+      setFormError('Tu pago fue rechazado. Puedes intentar de nuevo con otra tarjeta.');
+    },
+  });
 
   // Si la sesión está cargando, mostramos un spinner para no expulsar al usuario
   if (isLoading) {
@@ -246,6 +264,9 @@ const Checkout: React.FC = () => {
       });
 
       orderRef.current = result;
+
+      // Activar el listener Realtime con el UUID real de la orden
+      setCurrentOrderId(result.orderId);
 
       setStep(2);
       window.scrollTo({ top: 0, behavior: 'smooth' });

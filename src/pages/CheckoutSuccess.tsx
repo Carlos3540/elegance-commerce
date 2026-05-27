@@ -69,6 +69,16 @@ const CheckoutSuccess: React.FC = () => {
         }
       } else if (['DECLINED', 'VOIDED', 'ERROR', 'REJECTED', 'FAILED'].includes(status)) {
         setPaymentState('failed');
+      } else if (orderData.status === 'paid') {
+        // Fallback: el webhook ya actualizó orders.status pero pagos_bold
+        // aún no se ha propagado. Mostramos éxito de todas formas.
+        setPaymentState('approved');
+        if (!cartCleared) {
+          clearCart();
+          setCartCleared(true);
+        }
+      } else if (orderData.status === 'failed') {
+        setPaymentState('failed');
       } else {
         // PENDING o sin registro aún: puede que el webhook no haya llegado todavía
         setPaymentState('pending');
@@ -83,7 +93,8 @@ const CheckoutSuccess: React.FC = () => {
     checkPayment();
   }, [checkPayment]);
 
-  // ── Suscripción Realtime: si el webhook Bold llega mientras el cliente está viendo esta página
+  // ── Suscripción Realtime #1: pagos_bold ─────────────────────────────────────
+  // Detecta cuando bold-webhook actualiza el estado de pago en pagos_bold.
   useEffect(() => {
     if (!orderId) return;
 
@@ -104,6 +115,39 @@ const CheckoutSuccess: React.FC = () => {
             setPaymentState('approved');
             if (!cartCleared) { clearCart(); setCartCleared(true); }
           } else if (['DECLINED', 'VOIDED', 'ERROR', 'REJECTED', 'FAILED'].includes(newStatus)) {
+            setPaymentState('failed');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [orderId, clearCart, cartCleared]);
+
+  // ── Suscripción Realtime #2: orders (fallback más rápido) ───────────────────
+  // El webhook actualiza orders.status antes de pagos_bold.bold_status,
+  // por lo que este canal dispara la UI un poco antes como fallback rápido.
+  useEffect(() => {
+    if (!orderId) return;
+
+    const channel = supabase
+      .channel(`order-paid-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event:  'UPDATE',
+          schema: 'public',
+          table:  'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const newStatus = payload.new?.status as string | undefined;
+          if (!newStatus) return;
+
+          if (newStatus === 'paid') {
+            setPaymentState('approved');
+            if (!cartCleared) { clearCart(); setCartCleared(true); }
+          } else if (newStatus === 'failed') {
             setPaymentState('failed');
           }
         }

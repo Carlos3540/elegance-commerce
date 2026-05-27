@@ -76,12 +76,25 @@ serve(async (req) => {
     );
 
     if (isRejected) {
-      console.log(`[bold-webhook] Pago rechazado/fallido para orden ${supaOrderId}. Actualizando estado a failed...`);
-      // Actualizar pagos_bold primero para que el UI en tiempo real reciba el evento y muestre el fallo
-      await supabase.from('pagos_bold').update({ bold_status: event?.data?.status || 'REJECTED' }).eq('order_id', supaOrderId);
-      
-      // En lugar de eliminar la orden, la marcamos como fallida
-      await supabase.from('orders').update({ status: 'failed' }).eq('id', supaOrderId);
+      console.log(`[bold-webhook] ❌ Pago rechazado para orden ${supaOrderId}`);
+
+      // 1. Marcar la orden como fallida (Realtime emite UPDATE → frontend muestra toast)
+      await supabase
+        .from('orders')
+        .update({ status: 'failed', bold_order_id: boldOrderId })
+        .eq('id', supaOrderId);
+
+      // 2. Actualizar pagos_bold para que CheckoutSuccess detecte el rechazo
+      await supabase
+        .from('pagos_bold')
+        .update({
+          bold_status:        event?.data?.status || 'REJECTED',
+          bold_transaction_id: event?.data?.id    ?? null,
+          webhook_payload:    event,
+        })
+        .eq('order_id', supaOrderId);
+
+      console.log('[bold-webhook] ✅ Orden y pagos_bold marcados como fallidos');
       return new Response('ok', { status: 200 });
     }
 
@@ -104,6 +117,8 @@ serve(async (req) => {
     }
 
     // ── 6. Actualizar estado del pago en orders ──────────────────────────────
+    // Esto dispara el evento Realtime que el hook useOrderStatusListener
+    // escucha en el frontend → muestra toast "✅ Pago exitoso" + redirige.
     const { error: updateError } = await supabase
       .from('orders')
       .update({
@@ -117,7 +132,26 @@ serve(async (req) => {
     if (updateError) {
       console.error('[bold-webhook] Error actualizando orden:', updateError);
     } else {
-      console.log('[bold-webhook] Orden actualizada a "paid":', supaOrderId);
+      console.log('[bold-webhook] ✅ Orden actualizada a "paid":', supaOrderId);
+    }
+
+    // ── 6b. Actualizar pagos_bold a APPROVED ─────────────────────────────────
+    // CheckoutSuccess.tsx escucha pagos_bold via Realtime para detectar aprobación.
+    // Sin este UPDATE la página queda atascada en estado "pendiente".
+    const { error: boldUpdateErr } = await supabase
+      .from('pagos_bold')
+      .update({
+        bold_status:         'APPROVED',
+        bold_transaction_id: event?.data?.id ?? boldOrderId,
+        paid_at:             new Date().toISOString(),
+        webhook_payload:     event,
+      })
+      .eq('order_id', supaOrderId);
+
+    if (boldUpdateErr) {
+      console.error('[bold-webhook] Error actualizando pagos_bold:', boldUpdateErr);
+    } else {
+      console.log('[bold-webhook] ✅ pagos_bold actualizado a APPROVED');
     }
 
     // ── 7. Disparar creación de guía en MiPaquete ────────────────────────────
