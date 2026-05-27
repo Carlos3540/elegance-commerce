@@ -62,23 +62,39 @@ serve(async (req) => {
       event?.data?.status === 'VOIDED' ||
       event?.data?.status === 'ERROR';
 
-    // Extraer metadata del pago para saber a qué orden afecta
-    const boldOrderId = event?.data?.orderId    ?? event?.data?.order_id ?? '';
+    // Extraer metadata del pago
+    const boldOrderId = event?.data?.orderId ?? event?.data?.order_id ?? '';
     const amount      = Number(event?.data?.amount ?? 0);
-    // orderId de Supabase viene en metadata que pasamos al crear la orden
-    const supaOrderId = event?.data?.metadata?.orderId ?? event?.data?.metadata?.order_id ?? '';
-
-    if (!supaOrderId) {
-      console.error('[bold-webhook] No se encontró orderId en metadata del evento');
-      // Retornar 200 para que Bold no reintente indefinidamente
-      return new Response('ok', { status: 200 });
-    }
-
+    
     // ── Conectar a Supabase ───────────────────────────────────────────────
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     );
+
+    // Intentar obtener el orderId directamente del metadata
+    let supaOrderId = event?.data?.metadata?.orderId ?? event?.data?.metadata?.order_id ?? '';
+
+    // Fallback: Si no vino orderId en metadata, pero sí vino reference (ej: EV-1779909128894-INQTU)
+    // Buscamos el order_id real en nuestra tabla pagos_bold
+    if (!supaOrderId && event?.data?.metadata?.reference) {
+      console.log(`[bold-webhook] Buscando orden con referencia: ${event.data.metadata.reference}`);
+      const { data: pagoBold } = await supabase
+        .from('pagos_bold')
+        .select('order_id')
+        .eq('bold_order_id', event.data.metadata.reference)
+        .single();
+      
+      if (pagoBold?.order_id) {
+        supaOrderId = pagoBold.order_id;
+        console.log(`[bold-webhook] Orden encontrada en DB: ${supaOrderId}`);
+      }
+    }
+
+    if (!supaOrderId) {
+      console.error('[bold-webhook] No se encontró orderId en metadata del evento ni en BD');
+      return new Response('ok', { status: 200 });
+    }
 
     if (isRejected) {
       console.log(`[bold-webhook] ❌ Pago rechazado para orden ${supaOrderId}`);

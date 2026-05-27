@@ -25,6 +25,7 @@ export const useOrders = () => {
           )
         `)
         .eq('user_id', user.id)
+        .not('status', 'in', '("pending","failed")')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -85,6 +86,7 @@ export const useAdminOrders = () => {
           *,
           order_items(*)
         `)
+        .not('status', 'in', '("pending","failed")')
         .order('created_at', { ascending: false });
 
       if (error) {
