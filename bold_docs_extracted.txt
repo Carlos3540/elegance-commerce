@@ -1,0 +1,783 @@
+--- LINE 265 ---
+
+    &quot;datacontenttype&quot;  :   &quot;application/json&quot;  
+  }        
+ El endpoint debe responder inmediatamente con el código de estado  200  antes de que cualquier lógica de tu sistema provoque un error por tiempo de espera (con un máximo de 2 segundos permitidos). Esta respuesta confirma que el evento fue recibido correctamente. 
+  A continuación encontrarás la descripción de cada uno de los campos contenidos en el cuerpo del JSON.   Descripción de estructura de la notificación      Nombre del campo  Descripción      id  UUID de la notificación. Es única para cada notificación enviada.    type  Tipo de la notificación. Describe el estado de transacción al momento de emitir la notificación. Sus posibles valores son:      SALE_APPROVED  → “Venta aprobada”    SALE_REJECTED  → “Venta rechazada”    VOID_APPROVED  → “Anulación aprobada”    VOID_REJECTED  → “Anulación rechazada”    subject  ID de la transacción que está siendo notificada. Este ID es definido por Bold.    source  Recurso que lanzó la notificación en cuestión.    spec_version  Versión de la especificación  CloudEvents          usada.    time  Hora de emisión de la notificación en formato POSIX.    data  Cuerpo de la notificación. Iincluye información de la transacción tal como: fecha de creación, monto, impuestos, método de pago, información del método de pago, referencia externa enviada a Bold al momento del pago, etc.    datacontenttype  Formato en el que se encuentra el body de la notificación.      Descripción del cuerpo de la notificación      Tarjeta  Tarjeta Web  Nequi  Boton Bancolombia  PSE  QR Bold     Tarjeta     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción.    metadata  object  Objeto que contiene información adicional enviada por el comercio al momento de crear la transacción.    metadata.reference  string  Referencia de pago. Esta depende del tipo de integración:       API Integrations   valor definido en  reference  al crear el pago.       bold_code  string  Código único generado por Bold para identificar la transacción en el datáfono.    payer_email  string  Correo electrónico del tarjetahabiente    payment_method  string  Método de pago usado en la transacción. Los posibles valores son:      CARD  → tarjetas de crédito/débito    SOFT_POS  → tarjetas de crédito/débito usando el dispositivo móvil    card  object  Información básica de la tarjeta con la que se realizó el pago.    card.capture_mode  string  Método de captura usado para el pago. Los posibles valores son:      CHIP     CONTACTLESS_CHIP       card.brand  string  Franquicia de la tarjeta usada en el pago. Los posibles valores son:      VISA     VISA_ELECTRON    MASTERCARD     MAESTRO     AMERICAN_EXPRESS     CODENSA     DINERS     DISCOVER     TUYA     SODEXO     OLIMPICA     UNKOWN       card.cardholder_name  string  Nombre del tarjetahabiente.    card.terminal_id  string  ID del datáfono usado para la captura de la tarjeta.    card.masked_pan  string  PAN de la tarjeta con la que se realizó el pago enmascarado con el siguiente formato “123456xxxxxx7890”    card.installments  number  Numero de cuotas escogido por el tarjetahabiente.    card.card_type  string  Tipo de la tarjeta que uso el tarjetahabiente, Los posibles valores son:      DEBIT     CREDIT       approval_number  string  Numero de aprobación de la transacción ante la red.    integration  string  Tipo de integración usada en la transacción. Los posibles valores son:      POS  → datáfono Bold Plus    BOLD_TAP  → datáfono móvil    API_INTEGRATIONS  → API Integrations       Tarjeta Web     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción.    metadata.reference  string  Referencia de pago. Esta depende del tipo de integración:       Applink   (deeplink) valor definido en  reference  al crear el deeplink.      Botón de pagos   valor del atributo   order-id  , si no se define se toma el timestamp del momento de la transacción.      API Link de pagos   el valor del  payment_link  generado al crear el link de pago (inicia por LNK_).  También recibirás notificación de las transacciones hechas por datáfono  (*Solo para venta no presente) .      bold_code  string  Código único generado por Bold para identificar la transacción en el datáfono.    payer_email  string  Correo electrónico del tarjetahabiente    payment_method  string  Método de pago usado en la transacción. Los posibles valores son:      CARD_WEB  → tarjetas de crédito/débito usando link de pago    card  object  Información básica de la tarjeta con la que se realizó el pago.    card.brand  string  Franquicia de la tarjeta usada en el pago. Los posibles valores son:      VISA     VISA_ELECTRON    MASTERCARD     MAESTRO     AMERICAN_EXPRESS     CODENSA     DINERS     DISCOVER     TUYA     SODEXO     OLIMPICA     UNKOWN       card.cardholder_name  string  Nombre del tarjetahabiente.    card.terminal_id  string  ID del datáfono usado para la captura de la tarjeta.    card.masked_pan  string  PAN de la tarjeta con la que se realizó el pago enmascarado con el siguiente formato “123456xxxxxx7890”    card.installments  number  Numero de cuotas escogido por el tarjetahabiente.    card.card_type  string  Tipo de la tarjeta que uso el tarjetahabiente, Los posibles valores son:      DEBIT     CREDIT       approval_number  string  Numero de aprobación de la transacción ante la red.    integration  string  Tipo de integración usada en la transacción. Los posibles valores son:      POS  → datáfono Bold Plus    SOFT_POS  → datáfono móvil    API_INTEGRATIONS  → API Integrations    APP_LINK  → AppLink (deeplink)    BUTTON  → Botón de pagos    LINK  → Link de pagos       Nequi     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. En transacciones NEQUI, puede contener un identificador de la transacción.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  NEQUI .       Boton Bancolombia     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. En este caso, puede ser un identificador de la sesión de pago.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link o botón de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  BOTON_BANCOLOMBIA .    integration  string  Tipo de integración usada en la transacción. Valor esperado:  LINK  o  BUTTON .       PSE     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. Puede ser un identificador de la sesión de pago.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link o botón de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  PSE .    integration  string  Tipo de integración usada en la transacción. Valores esperados:  LINK  o  BUTTON .       QR Bold     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción. En este ejemplo, la lista está vacía.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. Puede ser un identificador de la sesión de pago.    metadata  object  Objeto que contiene metadatos de la transacción.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear la transacción.  Puede ser  null  .    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo en este caso: QR.    integration  string  Tipo de integración usada en la transacción. Valores esperados:  POS ,  LINK  o  BUTTON .       Activa tus llaves    Antes de poder recibir tus eventos, es necesario que habilites tus llaves de integración, puedes leer la guía de activación de los diferentes tipos de llaves
+en la documentación de   Llaves de integración    El webhook determina que llaves de integración usar para firmar los eventos siguiendo el siguiente orden de prioridad:  
+
+--- LINE 267 ---
+
+ El endpoint debe responder inmediatamente con el código de estado  200  antes de que cualquier lógica de tu sistema provoque un error por tiempo de espera (con un máximo de 2 segundos permitidos). Esta respuesta confirma que el evento fue recibido correctamente. 
+  A continuación encontrarás la descripción de cada uno de los campos contenidos en el cuerpo del JSON.   Descripción de estructura de la notificación      Nombre del campo  Descripción      id  UUID de la notificación. Es única para cada notificación enviada.    type  Tipo de la notificación. Describe el estado de transacción al momento de emitir la notificación. Sus posibles valores son:      SALE_APPROVED  → “Venta aprobada”    SALE_REJECTED  → “Venta rechazada”    VOID_APPROVED  → “Anulación aprobada”    VOID_REJECTED  → “Anulación rechazada”    subject  ID de la transacción que está siendo notificada. Este ID es definido por Bold.    source  Recurso que lanzó la notificación en cuestión.    spec_version  Versión de la especificación  CloudEvents          usada.    time  Hora de emisión de la notificación en formato POSIX.    data  Cuerpo de la notificación. Iincluye información de la transacción tal como: fecha de creación, monto, impuestos, método de pago, información del método de pago, referencia externa enviada a Bold al momento del pago, etc.    datacontenttype  Formato en el que se encuentra el body de la notificación.      Descripción del cuerpo de la notificación      Tarjeta  Tarjeta Web  Nequi  Boton Bancolombia  PSE  QR Bold     Tarjeta     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción.    metadata  object  Objeto que contiene información adicional enviada por el comercio al momento de crear la transacción.    metadata.reference  string  Referencia de pago. Esta depende del tipo de integración:       API Integrations   valor definido en  reference  al crear el pago.       bold_code  string  Código único generado por Bold para identificar la transacción en el datáfono.    payer_email  string  Correo electrónico del tarjetahabiente    payment_method  string  Método de pago usado en la transacción. Los posibles valores son:      CARD  → tarjetas de crédito/débito    SOFT_POS  → tarjetas de crédito/débito usando el dispositivo móvil    card  object  Información básica de la tarjeta con la que se realizó el pago.    card.capture_mode  string  Método de captura usado para el pago. Los posibles valores son:      CHIP     CONTACTLESS_CHIP       card.brand  string  Franquicia de la tarjeta usada en el pago. Los posibles valores son:      VISA     VISA_ELECTRON    MASTERCARD     MAESTRO     AMERICAN_EXPRESS     CODENSA     DINERS     DISCOVER     TUYA     SODEXO     OLIMPICA     UNKOWN       card.cardholder_name  string  Nombre del tarjetahabiente.    card.terminal_id  string  ID del datáfono usado para la captura de la tarjeta.    card.masked_pan  string  PAN de la tarjeta con la que se realizó el pago enmascarado con el siguiente formato “123456xxxxxx7890”    card.installments  number  Numero de cuotas escogido por el tarjetahabiente.    card.card_type  string  Tipo de la tarjeta que uso el tarjetahabiente, Los posibles valores son:      DEBIT     CREDIT       approval_number  string  Numero de aprobación de la transacción ante la red.    integration  string  Tipo de integración usada en la transacción. Los posibles valores son:      POS  → datáfono Bold Plus    BOLD_TAP  → datáfono móvil    API_INTEGRATIONS  → API Integrations       Tarjeta Web     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción.    metadata.reference  string  Referencia de pago. Esta depende del tipo de integración:       Applink   (deeplink) valor definido en  reference  al crear el deeplink.      Botón de pagos   valor del atributo   order-id  , si no se define se toma el timestamp del momento de la transacción.      API Link de pagos   el valor del  payment_link  generado al crear el link de pago (inicia por LNK_).  También recibirás notificación de las transacciones hechas por datáfono  (*Solo para venta no presente) .      bold_code  string  Código único generado por Bold para identificar la transacción en el datáfono.    payer_email  string  Correo electrónico del tarjetahabiente    payment_method  string  Método de pago usado en la transacción. Los posibles valores son:      CARD_WEB  → tarjetas de crédito/débito usando link de pago    card  object  Información básica de la tarjeta con la que se realizó el pago.    card.brand  string  Franquicia de la tarjeta usada en el pago. Los posibles valores son:      VISA     VISA_ELECTRON    MASTERCARD     MAESTRO     AMERICAN_EXPRESS     CODENSA     DINERS     DISCOVER     TUYA     SODEXO     OLIMPICA     UNKOWN       card.cardholder_name  string  Nombre del tarjetahabiente.    card.terminal_id  string  ID del datáfono usado para la captura de la tarjeta.    card.masked_pan  string  PAN de la tarjeta con la que se realizó el pago enmascarado con el siguiente formato “123456xxxxxx7890”    card.installments  number  Numero de cuotas escogido por el tarjetahabiente.    card.card_type  string  Tipo de la tarjeta que uso el tarjetahabiente, Los posibles valores son:      DEBIT     CREDIT       approval_number  string  Numero de aprobación de la transacción ante la red.    integration  string  Tipo de integración usada en la transacción. Los posibles valores son:      POS  → datáfono Bold Plus    SOFT_POS  → datáfono móvil    API_INTEGRATIONS  → API Integrations    APP_LINK  → AppLink (deeplink)    BUTTON  → Botón de pagos    LINK  → Link de pagos       Nequi     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. En transacciones NEQUI, puede contener un identificador de la transacción.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  NEQUI .       Boton Bancolombia     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. En este caso, puede ser un identificador de la sesión de pago.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link o botón de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  BOTON_BANCOLOMBIA .    integration  string  Tipo de integración usada en la transacción. Valor esperado:  LINK  o  BUTTON .       PSE     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción en cuestión. Cada objeto incluye el tipo del impuesto, la base y el valor del mismo.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. Puede ser un identificador de la sesión de pago.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear el link o botón de pago que inició la transacción.    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo:  PSE .    integration  string  Tipo de integración usada en la transacción. Valores esperados:  LINK  o  BUTTON .       QR Bold     Campo  Tipo  Descripción      payment_id  string  ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.    merchant_id  string  ID del comercio que está haciendo la transacción.    created_at  string  Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.    amount  object  Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.    amount.currency  string  Moneda en la que se realizó la transacción, siguiendo el estándar ISO 4217.    amount.total  number  Cantidad correspondiente al total a procesar en la transacción. Incluye propinas e impuestos asociados.    amount.taxes  List[Object]  Lista de objetos que contienen todos los impuestos asociados a la transacción. En este ejemplo, la lista está vacía.     amount.taxes[].base   number  Base del impuesto asociado a la transacción.     amount.taxes[].type   string  Tipo de impuesto asociado a la transacción. Los posibles valores son:      VAT  → Impuesto al valor agregado    CONSUMPTION  → Impuesto al consumo       amount.taxes[].value   number  Valor del impuesto asociado a la transacción.    amount.tip  number  Cantidad correspondiente a la propina asignada a la transacción.    user_id  string  ID del usuario del comercio que inició la transacción. Puede ser un identificador de la sesión de pago.    metadata  object  Objeto que contiene metadatos de la transacción.    metadata.reference  string  Referencia de pago. Generalmente, es el valor definido al crear la transacción.  Puede ser  null  .    bold_code  string  Código único generado por Bold para identificar la transacción.    payer_email  string  Correo electrónico del pagador.    payment_method  string  Método de pago usado en la transacción. Valor fijo en este caso: QR.    integration  string  Tipo de integración usada en la transacción. Valores esperados:  POS ,  LINK  o  BUTTON .       Activa tus llaves    Antes de poder recibir tus eventos, es necesario que habilites tus llaves de integración, puedes leer la guía de activación de los diferentes tipos de llaves
+en la documentación de   Llaves de integración    El webhook determina que llaves de integración usar para firmar los eventos siguiendo el siguiente orden de prioridad:  
+ Si el pago de la notificación en cuestión fue realizado mediante   API Integrations  , la notificación enviada
+al webhook será firmada usando la llave  API Datáfono  
+
+--- LINE 269 ---
+
+en la documentación de   Llaves de integración    El webhook determina que llaves de integración usar para firmar los eventos siguiendo el siguiente orden de prioridad:  
+ Si el pago de la notificación en cuestión fue realizado mediante   API Integrations  , la notificación enviada
+al webhook será firmada usando la llave  API Datáfono  
+ Si el pago de la notificación en cuestión fue realizado mediante   Botón de pagos  , la notificación enviada
+al webhook será firmada usando la llave  Botón de pagos  
+
+--- LINE 271 ---
+
+al webhook será firmada usando la llave  API Datáfono  
+ Si el pago de la notificación en cuestión fue realizado mediante   Botón de pagos  , la notificación enviada
+al webhook será firmada usando la llave  Botón de pagos  
+ Para los pagos realizados por fuera de las integraciones mencionadas anteriormente, se usará siempre la llave  Botón de pagos  si se encuentra
+habilitada, en caso contrario, se usará la llave  API Datáfono . 
+
+--- LINE 292 ---
+
+ Botón de pagos 
+ Versiones antiguas de la app Bold 
+  pueden tener una demora de máximo 10 minutos para que sean notificadas a tu webhook. Estamos trabajando para que estos tiempos sean menores.    Verifica el origen de los eventos recibidos    Te recomendamos asegurar tu integración de webhook con Bold. Para ello, es importante verificar que todas las peticiones realizadas a la URL del webhook sean generadas exclusivamente por Bold.  Cómo verificar las firmas de webhook  Para asegurar que la información provenga de  Bold  y garantizar la integridad de los datos, puedes seguir estos pasos:  
+ 
+ Convertir el cuerpo recibido a formato Base64. 
+
+--- LINE 297 ---
+
+ 
+ 
+ Cifrar el cuerpo en Base64 utilizando la  llave secreta  con el algoritmo de encriptación  HMAC-SHA256  para generar un HMAC (código de autenticación de mensajes) en formato hexadecimal. 
+ 
+ 
+
+--- LINE 300 ---
+
+ 
+ 
+ Comparar el resultado obtenido con el valor del encabezado  x-bold-signature  incluido en la petición y verificar que sean idénticos. 
+ 
+  Ejemplo del contenido enviado en el header x-bold-signature   &#x27;x-bold-signature&#x27;: &#x27;381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662&#x27;   A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:     Python  Go  Nest.js  Node  PHP     Python                        from   flask   import   Flask, request  
+
+--- LINE 302 ---
+
+ Comparar el resultado obtenido con el valor del encabezado  x-bold-signature  incluido en la petición y verificar que sean idénticos. 
+ 
+  Ejemplo del contenido enviado en el header x-bold-signature   &#x27;x-bold-signature&#x27;: &#x27;381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662&#x27;   A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:     Python  Go  Nest.js  Node  PHP     Python                        from   flask   import   Flask, request  
+    import   hmac  
+    import   hashlib  
+
+--- LINE 303 ---
+
+ 
+  Ejemplo del contenido enviado en el header x-bold-signature   &#x27;x-bold-signature&#x27;: &#x27;381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662&#x27;   A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:     Python  Go  Nest.js  Node  PHP     Python                        from   flask   import   Flask, request  
+    import   hmac  
+    import   hashlib  
+    import   base64  
+
+--- LINE 310 ---
+
+   
+    @app.route  (  &quot;/&quot;  ,   methods  =  [  &quot;POST&quot;  ])  
+    def   validate_signature  ():  
+    signature   =   request.headers.get(  &quot;x-bold-Signature&quot;  ,   &quot;&quot;  )  
+    body   =   request.get_data(  parse_form_data  =  False  )  
+
+--- LINE 311 ---
+
+    @app.route  (  &quot;/&quot;  ,   methods  =  [  &quot;POST&quot;  ])  
+    def   validate_signature  ():  
+    signature   =   request.headers.get(  &quot;x-bold-Signature&quot;  ,   &quot;&quot;  )  
+    body   =   request.get_data(  parse_form_data  =  False  )  
+   
+
+--- LINE 318 ---
+
+        encoded   =   base64.b64encode(str_message.encode(  &quot;utf-8&quot;  ))  
+   
+        hashed   =   hmac.new(  key  =  &quot;&lt;secret_key&gt;&quot;  .encode(),   digestmod  =  hashlib.sha256,   msg  =  encoded).hexdigest()  
+   
+        is_valid_request   =   hmac.compare_digest(hashed.encode(), signature.encode())  
+
+--- LINE 320 ---
+
+        hashed   =   hmac.new(  key  =  &quot;&lt;secret_key&gt;&quot;  .encode(),   digestmod  =  hashlib.sha256,   msg  =  encoded).hexdigest()  
+   
+        is_valid_request   =   hmac.compare_digest(hashed.encode(), signature.encode())  
+   
+        if   is_valid_request:  
+
+--- LINE 330 ---
+
+   
+  import   (  
+  &quot;  crypto/hmac  &quot;  
+  &quot;  crypto/sha256  &quot;  
+  &quot;  encoding/base64  &quot;  
+
+--- LINE 338 ---
+
+  )  
+   
+  func   validateSignature  (  w   http  .  ResponseWriter  ,   r   \  *  http  .  Request  ) {  
+  payload  *  bytes,   *   :=   io.  ReadAll  (r.Body)  
+  sign   :=   r.Header.  Get  (  &quot;x-bold-signature&quot;  )  
+
+--- LINE 340 ---
+
+  func   validateSignature  (  w   http  .  ResponseWriter  ,   r   \  *  http  .  Request  ) {  
+  payload  *  bytes,   *   :=   io.  ReadAll  (r.Body)  
+  sign   :=   r.Header.  Get  (  &quot;x-bold-signature&quot;  )  
+   
+        payload_string   :=   base64.StdEncoding.  EncodeToString  (payload_bytes)  
+
+--- LINE 344 ---
+
+        payload_string   :=   base64.StdEncoding.  EncodeToString  (payload_bytes)  
+        sign_bytes   :=   []  byte  (sign)  
+        secret_bytes   :=   []  byte  (  &quot;&lt;secret_key&gt;&quot;  )  
+   
+        mac   :=   hmac.  New  (sha256.New, secret_bytes)  
+
+--- LINE 346 ---
+
+        secret_bytes   :=   []  byte  (  &quot;&lt;secret_key&gt;&quot;  )  
+   
+        mac   :=   hmac.  New  (sha256.New, secret_bytes)  
+        mac.  Write  ([]  byte  (payload_string))  
+        sign_calculated   :=   mac.  Sum  (  nil  )  
+
+--- LINE 352 ---
+
+        string_mac   :=   hex.  EncodeToString  (sign_calculated)  
+   
+        is_valid_request   :=   hmac.  Equal  ([]  byte  (string_mac), sign_bytes)  
+   
+        if   is_valid_request {  
+
+--- LINE 359 ---
+
+        //400 error response  
+  }        Nest.js                      import   { NextApiRequest, NextApiResponse }   from   &#x27;next&#x27;  ;  
+  import   getRawBody   from   &#x27;raw-body&#x27;  ;  
+   
+  export   const   config   =   {  
+
+--- LINE 370 ---
+
+    try   {  
+      // Captura el cuerpo crudo como un Buffer  
+      const   rawBody   =   await   getRawBody  (req);  
+      const   body   =   rawBody.  toString  (  &#x27;utf-8&#x27;  );   // Convierte el Buffer a string si es necesario  
+   
+
+--- LINE 371 ---
+
+      // Captura el cuerpo crudo como un Buffer  
+      const   rawBody   =   await   getRawBody  (req);  
+      const   body   =   rawBody.  toString  (  &#x27;utf-8&#x27;  );   // Convierte el Buffer a string si es necesario  
+   
+      const   {   headers   }   =   req;  
+
+--- LINE 374 ---
+
+   
+      const   {   headers   }   =   req;  
+      const   receivedSignature   =   headers[  &#x27;x-bold-signature&#x27;  ]   as   string  ;  
+      console.  log  (  &#x27;req.body &#x27;  , body);  
+   
+
+--- LINE 377 ---
+
+      console.  log  (  &#x27;req.body &#x27;  , body);  
+   
+      const   secretKey   =   &#x27;&#x27;  ;   // Llave secreta  
+      const   encodedBody   =   base64.  encode  (body);   // Codifica el cuerpo crudo  
+      console.  log  (  &#x27;encoded &#x27;  , encodedBody);  
+
+--- LINE 381 ---
+
+      console.  log  (  &#x27;encoded &#x27;  , encodedBody);  
+   
+      const   hashed   =   crypto.  createHmac  (  &#x27;sha256&#x27;  , secretKey).  update  (encodedBody).  digest  (  &#x27;hex&#x27;  );  
+      console.  log  (  &#x27;receivedSignature &#x27;  , Buffer.  from  (receivedSignature).  length  );  
+      console.  log  (  &#x27;hashed &#x27;  , Buffer.  from  (hashed).  length  );  
+
+--- LINE 382 ---
+
+   
+      const   hashed   =   crypto.  createHmac  (  &#x27;sha256&#x27;  , secretKey).  update  (encodedBody).  digest  (  &#x27;hex&#x27;  );  
+      console.  log  (  &#x27;receivedSignature &#x27;  , Buffer.  from  (receivedSignature).  length  );  
+      console.  log  (  &#x27;hashed &#x27;  , Buffer.  from  (hashed).  length  );  
+   
+
+--- LINE 385 ---
+
+      console.  log  (  &#x27;hashed &#x27;  , Buffer.  from  (hashed).  length  );  
+   
+      const   isValidRequest   =   crypto.  timingSafeEqual  (Buffer.  from  (hashed), Buffer.  from  (receivedSignature));  
+      console.  log  (  &#x27;is valid&#x27;  , isValidRequest);  
+   
+
+--- LINE 406 ---
+
+  const   port   =   4000  ;  
+   
+  app.  use  (express.  raw  ({ type:   &#x27;application/json&#x27;   }));  
+   
+  app.  post  (  &#x27;/signature&#x27;  , (  req  ,   res  )   =&gt;   {  
+
+--- LINE 408 ---
+
+  app.  use  (express.  raw  ({ type:   &#x27;application/json&#x27;   }));  
+   
+  app.  post  (  &#x27;/signature&#x27;  , (  req  ,   res  )   =&gt;   {  
+      const   {   body   }   =   req;  
+      const   receivedSignature   =   req.headers[  &#x27;x-bold-signature&#x27;  ];  
+
+--- LINE 410 ---
+
+  app.  post  (  &#x27;/signature&#x27;  , (  req  ,   res  )   =&gt;   {  
+      const   {   body   }   =   req;  
+      const   receivedSignature   =   req.headers[  &#x27;x-bold-signature&#x27;  ];  
+   
+      const   encoded   =   base64.  encode  (body);  
+
+--- LINE 413 ---
+
+   
+      const   encoded   =   base64.  encode  (body);  
+      const   secretKey   =   &#x27;&#x27;  ;   
+   
+      const   hashed   =   crypto  
+
+--- LINE 416 ---
+
+   
+      const   hashed   =   crypto  
+          .  createHmac  (  &#x27;sha256&#x27;  , secretKey)  
+          .  update  (encoded)  
+          .  digest  (  &#x27;hex&#x27;  );  
+
+--- LINE 420 ---
+
+          .  digest  (  &#x27;hex&#x27;  );  
+   
+      const   isValidRequest   =   crypto.  timingSafeEqual  (Buffer.  from  (hashed), Buffer.  from  (receivedSignature));  
+   
+      if  (isValidRequest){  
+
+--- LINE 424 ---
+
+      if  (isValidRequest){  
+          // 200 OK  
+          res.  json  ({ message:   &#x27;Valid signature&#x27;   });  
+      }  
+      else   {  
+
+--- LINE 427 ---
+
+      }  
+      else   {  
+          // 400 Bad Request invalid signature  
+          res.  status  (  400  ).  json  ({ message:   &#x27;Invalid signature&#x27;   });  
+      }  
+
+--- LINE 428 ---
+
+      else   {  
+          // 400 Bad Request invalid signature  
+          res.  status  (  400  ).  json  ({ message:   &#x27;Invalid signature&#x27;   });  
+      }  
+  });  
+
+--- LINE 434 ---
+
+  app.  listen  (port, ()   =&gt;   {  
+      console.  log  (  `Server is running on port ${  port  }`  );  
+  });        PHP                      $signature   =   $_SERVER[  &#x27;HTTP_X_BOLD_SIGNATURE&#x27;  ];  
+  $strMessage   =   file_get_contents  (  &#x27;php://input&#x27;  );  
+  $encoded   =   base64_encode  ($strMessage);  
+
+--- LINE 438 ---
+
+  $encoded   =   base64_encode  ($strMessage);  
+   
+  // Crear HMAC usando la llave secreta  
+  $secretKey   =   &#x27;LLAVE_SECRETA&#x27;  ;  
+  $hashed   =   hash_hmac  (  &#x27;sha256&#x27;  , $encoded, $secretKey);  
+
+--- LINE 439 ---
+
+   
+  // Crear HMAC usando la llave secreta  
+  $secretKey   =   &#x27;LLAVE_SECRETA&#x27;  ;  
+  $hashed   =   hash_hmac  (  &#x27;sha256&#x27;  , $encoded, $secretKey);  
+   
+
+--- LINE 440 ---
+
+  // Crear HMAC usando la llave secreta  
+  $secretKey   =   &#x27;LLAVE_SECRETA&#x27;  ;  
+  $hashed   =   hash_hmac  (  &#x27;sha256&#x27;  , $encoded, $secretKey);  
+   
+  // Comparar firmas  
+
+--- LINE 442 ---
+
+  $hashed   =   hash_hmac  (  &#x27;sha256&#x27;  , $encoded, $secretKey);  
+   
+  // Comparar firmas  
+  if   (  hash_equals  ($hashed, $signature)) {  
+      /** Código para guardar el estado de la transacción  
+
+--- LINE 443 ---
+
+   
+  // Comparar firmas  
+  if   (  hash_equals  ($hashed, $signature)) {  
+      /** Código para guardar el estado de la transacción  
+      * .....  
+
+--- LINE 451 ---
+
+      echo   &#x27;Valid request&#x27;  ;  
+  }   else   {  
+      // Enviar respuesta 400 por firma inválida  
+      http_response_code  (  400  );  
+      echo   &#x27;Invalid signature&#x27;  ;  
+
+--- LINE 453 ---
+
+      // Enviar respuesta 400 por firma inválida  
+      http_response_code  (  400  );  
+      echo   &#x27;Invalid signature&#x27;  ;  
+  }           En modo pruebas la firma usa una clave vacia, es decir cuando se quiere veirificar una transacción que se realizo con las llaves de pruebas, el atributo donde va tu  LLAVE_SECRETA  no se ingresa, debe ir como un String vacio.  Ejemplo:              $secretKey   =   &#x27;&#x27;  ;        
+ Webhook de pruebas   
+
+--- LINE 454 ---
+
+      http_response_code  (  400  );  
+      echo   &#x27;Invalid signature&#x27;  ;  
+  }           En modo pruebas la firma usa una clave vacia, es decir cuando se quiere veirificar una transacción que se realizo con las llaves de pruebas, el atributo donde va tu  LLAVE_SECRETA  no se ingresa, debe ir como un String vacio.  Ejemplo:              $secretKey   =   &#x27;&#x27;  ;        
+ Webhook de pruebas   
+ Se encuentra disponible un webhook de pruebas que puede ser configurado desde el panel de comercios en la sección de integraciones &gt; webhooks &gt; webhooks de prueba 
+
+--- LINE 556 ---
+
+ 
+ Política de reintentos del webhook   
+ Cuando tu sistema recibe una notificación de Bold, es crucial responder para confirmar la recepción correcta. Para esto debes enviar un código HTTP 200 (OK). En caso de no hacerlo, Bold intentará reenviar la notificación hasta obtener una confirmación de recepción HTTP 200 (OK) con un máximo de 5 reintentos. 
+ Los reintentos de notificación seguirán el siguiente procedimiento: 
+    # de reintento de notificacion  Tiempo desde el intento inicial      Primer reintento  15 min    Segundo reintento  1 Hora    Tercer reintento  4 Horas    Cuarto reintento  8 Horas    Quinto reintento  24 Horas    
+
+--- LINE 560 ---
+
+    # de reintento de notificacion  Tiempo desde el intento inicial      Primer reintento  15 min    Segundo reintento  1 Hora    Tercer reintento  4 Horas    Cuarto reintento  8 Horas    Quinto reintento  24 Horas    
+ Importante: ¿Cómo gestionar las notificaciones duplicadas o reintentos?   
+ Ten en cuenta que Bold puede enviarte múltiples notificaciones por webhook para una misma transacción (por ejemplo, cuando hay reintentos automáticos de conexión o confirmaciones de estado).
+Para garantizar el mejor funcionamiento de tu integración, te recomendamos implementar una validación (lógica de idempotencia) en tu servidor. 
+ Antes de procesar un pago o despachar un producto, asegúrate de: 
+
+--- LINE 565 ---
+
+ 
+ Validar el ID de la transacción: Revisa en tu base de datos si el identificador único del pago ya fue procesado. 
+ Evitar duplicados: Si el ID ya existe y tiene un estado exitoso, por favor envía un código 200 OK a Bold para confirmar que lo recibiste. No es necesario que dupliques la orden o el servicio. 
+ 
+ ¡Aplicar este ajuste es súper importante! Te ayudará a mantener tu información al día y a prevenir la entrega doble de tus productos.   Last updated on   May 23, 2026        Consulta de transacciones  Integración             2026  ©   Bold.co      (self.__next_f=self.__next_f||[]).push([0])  self.__next_f.push([1,"1:"$Sreact.fragment"
+
+--- LINE 825 ---
+
+"]}]
+"])  self.__next_f.push([1,"3c:["$","h2",null,{"id":"política-de-reintentos-del-webhook","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Política de reintentos del webhook",["$","$L25",null,{"id":"política-de-reintentos-del-webhook"}]]}]
+3d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Cuando tu sistema recibe una notificación de Bold, es crucial responder para confirmar la recepción correcta. Para esto debes enviar un código HTTP 200 (OK). En caso de no hacerlo, Bold intentará reenviar la notificación hasta obtener una confirmación de recepción HTTP 200 (OK) con un máximo de 5 reintentos."}]
+3e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Los reintentos de notificación seguirán el siguiente procedimiento:"}]
+"])  self.__next_f.push([1,"3f:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"style":{"textAlign":"left"},"children":"# de reintento de notificacion","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Tiempo desde el intento inicial","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Primer reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"15 min","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Segundo reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"1 Hora","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Tercer reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"4 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Cuarto reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"8 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Quinto reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"24 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+
+--- LINE 829 ---
+
+"])  self.__next_f.push([1,"3f:["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"style":{"textAlign":"left"},"children":"# de reintento de notificacion","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Tiempo desde el intento inicial","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Primer reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"15 min","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Segundo reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"1 Hora","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Tercer reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"4 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Cuarto reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"8 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"Quinto reintento","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"24 Horas","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]]}]]}]
+"])  self.__next_f.push([1,"40:["$","h2",null,{"id":"importante-cómo-gestionar-las-notificaciones-duplicadas-o-reintentos","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-10 x:border-b x:pb-1 x:text-3xl nextra-border","children":["Importante: ¿Cómo gestionar las notificaciones duplicadas o reintentos?",["$","$L25",null,{"id":"importante-cómo-gestionar-las-notificaciones-duplicadas-o-reintentos"}]]}]
+41:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Ten en cuenta que Bold puede enviarte múltiples notificaciones por webhook para una misma transacción (por ejemplo, cuando hay reintentos automáticos de conexión o confirmaciones de estado).\
+Para garantizar el mejor funcionamiento de tu integración, te recomendamos implementar una validación (lógica de idempotencia) en tu servidor."}]
+42:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Antes de procesar un pago o despachar un producto, asegúrate de:"}]
+
+--- LINE 834 ---
+
+43:["$","ul",null,{"className":"x:[:is(ol,ul)_\u0026]:my-[.75em] x:not-first:mt-[1.25em] x:list-disc x:ms-[1.5em]","children":["\
+",["$","li",null,{"className":"x:my-[.5em]","children":"Validar el ID de la transacción: Revisa en tu base de datos si el identificador único del pago ya fue procesado."}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":"Evitar duplicados: Si el ID ya existe y tiene un estado exitoso, por favor envía un código 200 OK a Bold para confirmar que lo recibiste. No es necesario que dupliques la orden o el servicio."}],"\
+"]}]
+44:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"¡Aplicar este ajuste es súper importante! Te ayudará a mantener tu información al día y a prevenir la entrega doble de tus productos."}]
+
+--- LINE 1050 ---
+
+","$L125"]}]]}]]}]]}]
+"])  self.__next_f.push([1,"76:["$","ol",null,{"className":"x:[:is(ol,ul)_\u0026]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","start":"2","children":["\
+",["$","li",null,{"className":"x:my-[.5em]","children":["El endpoint debe responder inmediatamente con el código de estado ",["$","strong",null,{"children":"200"}]," antes de que cualquier lógica de tu sistema provoque un error por tiempo de espera (con un máximo de 2 segundos permitidos). Esta respuesta confirma que el evento fue recibido correctamente."]}],"\
+"]}]
+77:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A continuación encontrarás la descripción de cada uno de los campos contenidos en el cuerpo del JSON."}]
+
+--- LINE 1060 ---
+
+7d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Antes de poder recibir tus eventos, es necesario que habilites tus llaves de integración, puedes leer la guía de activación de los diferentes tipos de llaves\
+en la documentación de ",["$","strong",null,{"children":["$","$L1a",null,{"href":"https://developers.bold.co/pagos-en-linea/llaves-de-integracion","target":"_blank","rel":"noreferrer","className":"Link-module-scss-module__NgbtIG__link","children":"Llaves de integración"}]}]]}]
+7e:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"El webhook determina que llaves de integración usar para firmar los eventos siguiendo el siguiente orden de prioridad:"}]
+"])  self.__next_f.push([1,"7f:["$","ol",null,{"className":"x:[:is(ol,ul)_\u0026]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\
+",["$","li",null,{"className":"x:my-[.5em]","children":["Si el pago de la notificación en cuestión fue realizado mediante ",["$","strong",null,{"children":["$","$L1a",null,{"href":"https://developers.bold.co/api-integrations/integration","target":"_blank","rel":"noreferrer","className":"Link-module-scss-module__NgbtIG__link","children":"API Integrations"}]}],", la notificación enviada\
+
+--- LINE 1063 ---
+
+"])  self.__next_f.push([1,"7f:["$","ol",null,{"className":"x:[:is(ol,ul)_\u0026]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\
+",["$","li",null,{"className":"x:my-[.5em]","children":["Si el pago de la notificación en cuestión fue realizado mediante ",["$","strong",null,{"children":["$","$L1a",null,{"href":"https://developers.bold.co/api-integrations/integration","target":"_blank","rel":"noreferrer","className":"Link-module-scss-module__NgbtIG__link","children":"API Integrations"}]}],", la notificación enviada\
+al webhook será firmada usando la llave ",["$","strong",null,{"children":"API Datáfono"}]]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["Si el pago de la notificación en cuestión fue realizado mediante ",["$","strong",null,{"children":["$","$L1a",null,{"href":"https://developers.bold.co/pagos-en-linea/boton-de-pagos","target":"_blank","rel":"noreferrer","className":"Link-module-scss-module__NgbtIG__link","children":"Botón de pagos"}]}],", la notificación enviada\
+al webhook será firmada usando la llave ",["$","strong",null,{"children":"Botón de pagos"}]]}],"\
+
+--- LINE 1065 ---
+
+al webhook será firmada usando la llave ",["$","strong",null,{"children":"API Datáfono"}]]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["Si el pago de la notificación en cuestión fue realizado mediante ",["$","strong",null,{"children":["$","$L1a",null,{"href":"https://developers.bold.co/pagos-en-linea/boton-de-pagos","target":"_blank","rel":"noreferrer","className":"Link-module-scss-module__NgbtIG__link","children":"Botón de pagos"}]}],", la notificación enviada\
+al webhook será firmada usando la llave ",["$","strong",null,{"children":"Botón de pagos"}]]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["Para los pagos realizados por fuera de las integraciones mencionadas anteriormente, se usará siempre la llave ",["$","strong",null,{"children":"Botón de pagos"}]," si se encuentra\
+habilitada, en caso contrario, se usará la llave ",["$","strong",null,{"children":"API Datáfono"}],"."]}],"\
+
+--- LINE 1099 ---
+
+8a:["$","h3",null,{"id":"verifica-el-origen-de-los-eventos-recibidos","className":"x:tracking-tight x:text-slate-900 x:dark:text-slate-100 x:font-semibold x:target:animate-[fade-in_1.5s] x:mt-8 x:text-2xl","children":["Verifica el origen de los eventos recibidos",["$","$L25",null,{"id":"verifica-el-origen-de-los-eventos-recibidos"}]]}]
+8b:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Te recomendamos asegurar tu integración de webhook con Bold. Para ello, es importante verificar que todas las peticiones realizadas a la URL del webhook sean generadas exclusivamente por Bold."}]
+8c:["$","h4",null,{"children":"Cómo verificar las firmas de webhook"}]
+8d:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Para asegurar que la información provenga de ",["$","strong",null,{"children":"Bold"}]," y garantizar la integridad de los datos, puedes seguir estos pasos:"]}]
+8e:["$","ol",null,{"className":"x:[:is(ol,ul)_\u0026]:my-[.75em] x:not-first:mt-[1.25em] x:list-decimal x:ms-6","children":["\
+
+--- LINE 1106 ---
+
+"]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["\
+",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Cifrar el cuerpo en Base64 utilizando la ",["$","strong",null,{"children":"llave secreta"}]," con el algoritmo de encriptación ",["$","strong",null,{"children":"HMAC-SHA256"}]," para generar un HMAC (código de autenticación de mensajes) en formato hexadecimal."]}],"\
+"]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["\
+
+--- LINE 1109 ---
+
+"]}],"\
+",["$","li",null,{"className":"x:my-[.5em]","children":["\
+",["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["Comparar el resultado obtenido con el valor del encabezado ",["$","strong",null,{"children":"x-bold-signature"}]," incluido en la petición y verificar que sean idénticos."]}],"\
+"]}],"\
+"]}]
+
+--- LINE 1112 ---
+
+"]}],"\
+"]}]
+8f:["$","h4",null,{"children":"Ejemplo del contenido enviado en el header x-bold-signature"}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"'x-bold-signature': '381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662'"}]}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:"}]
+
+--- LINE 1113 ---
+
+"]}]
+8f:["$","h4",null,{"children":"Ejemplo del contenido enviado en el header x-bold-signature"}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"'x-bold-signature': '381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662'"}]}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:"}]
+"])  self.__next_f.push([1,"92:["$","$L45",null,{"items":["Python","Go","Nest.js","Node","PHP"],"children":[["$","$L46",null,{"children":[["$","h3",null,{"id":"python","style":{"visibility":"hidden","width":0,"height":0},"children":"Python"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L146",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" flask "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" Flask, request"}]]}],"\
+
+--- LINE 1114 ---
+
+8f:["$","h4",null,{"children":"Ejemplo del contenido enviado en el header x-bold-signature"}]
+90:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["$","code",null,{"className":"nextra-code","dir":"ltr","children":"'x-bold-signature': '381db35c39c6e3016884c70054ade14f4d78bcd8167e8d1170751fe3bce74662'"}]}]
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:"}]
+"])  self.__next_f.push([1,"92:["$","$L45",null,{"items":["Python","Go","Nest.js","Node","PHP"],"children":[["$","$L46",null,{"children":[["$","h3",null,{"id":"python","style":{"visibility":"hidden","width":0,"height":0},"children":"Python"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L146",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" flask "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" Flask, request"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac"}]]}],"\
+
+--- LINE 1116 ---
+
+91:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"A continuación encuentras un snippet que puedes utilizar para hacer la verificación de la firma:"}]
+"])  self.__next_f.push([1,"92:["$","$L45",null,{"items":["Python","Go","Nest.js","Node","PHP"],"children":[["$","$L46",null,{"children":[["$","h3",null,{"id":"python","style":{"visibility":"hidden","width":0,"height":0},"children":"Python"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L146",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" flask "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" Flask, request"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hashlib"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64"}]]}],"\
+
+--- LINE 1141 ---
+
+","$L158","\
+","$L159"]}]]}]]}]]}],"$L15a","$L15b","$L15c","$L15d"]}]
+"])  self.__next_f.push([1,"93:["$","section",null,{"className":"Alert-module-scss-module__od9ZuW__alert Alert-module-scss-module__od9ZuW__warning","children":[["$","$L95",null,{"src":"$39:props:children:0:props:src","alt":"warning","className":"Alert-module-scss-module__od9ZuW__icon"}],["$","div",null,{"className":"Alert-module-scss-module__od9ZuW__content","children":[["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":["En modo pruebas la firma usa una clave vacia, es decir cuando se quiere veirificar una transacción que se realizo con las llaves de pruebas, el atributo donde va tu ",["$","strong",null,{"children":"LLAVE_SECRETA"}]," no se ingresa, debe ir como un String vacio."]}],["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Ejemplo:"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],false]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$secretKey "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" ''"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}]}]]}]]}]]}]]}]
+"])  self.__next_f.push([1,"96:["$","p",null,{"className":"x:not-first:mt-[1.25em] x:leading-7","children":"Por ejemplo, si la llave de identidad es:"}]
+97:["$","br",null,{}]
+
+--- LINE 1365 ---
+
+"])  self.__next_f.push([1,"144:["$","$L46",null,{"children":[["$","h3",null,{"id":"pse-1","style":{"visibility":"hidden","width":0,"height":0},"children":"PSE"}],["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"style":{"textAlign":"left"},"children":"Campo","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Tipo","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Descripción","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"payment_id","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"merchant_id","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"ID del comercio que está haciendo la transacción.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"created_at","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"amount","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"object","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"amount.currency","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L1ae"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L1af","$L1b0","$L1b1","$L1b2","$L1b3","$L1b4","$L1b5","$L1b6","$L1b7","$L1b8","$L1b9","$L1ba"]}]]}]]}]
+"])  self.__next_f.push([1,"145:["$","$L46",null,{"children":[["$","h3",null,{"id":"qr-bold-1","style":{"visibility":"hidden","width":0,"height":0},"children":"QR Bold"}],["$","table",null,{"className":"x:block x:overflow-x-auto nextra-scrollbar x:not-first:mt-[1.25em] x:p-0","children":[["$","thead",null,{"children":["$","tr",null,{"children":[["$","th",null,{"style":{"textAlign":"left"},"children":"Campo","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Tipo","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}],["$","th",null,{"style":{"textAlign":"left"},"children":"Descripción","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:font-semibold x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}]}],["$","tbody",null,{"children":[["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"payment_id","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"ID de la transacción generado por Bold. Permite llevar trazabilidad de la misma.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"merchant_id","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"ID del comercio que está haciendo la transacción.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"created_at","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"Cadena de texto que contiene la fecha y hora de creación de la transacción en formato ISO 8601 con time zone América/Bogotá.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"amount","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"object","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"Contiene información detallada de los montos a procesar. Incluye el monto total, los impuestos asociados y la propina correspondiente.","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}]],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],["$","tr",null,{"children":[["$","td",null,{"style":{"textAlign":"left"},"children":"amount.currency","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],["$","td",null,{"style":{"textAlign":"left"},"children":"string","className":"x:m-0 x:border x:border-gray-300 x:px-4 x:py-2 x:dark:border-gray-600"}],"$L1bb"],"className":"x:m-0 x:border-t x:border-gray-300 x:p-0 x:dark:border-gray-600 x:even:bg-gray-100 x:even:dark:bg-gray-600/20"}],"$L1bc","$L1bd","$L1be","$L1bf","$L1c0","$L1c1","$L1c2","$L1c3","$L1c4","$L1c5","$L1c6","$L1c7","$L1c8"]}]]}]]}]
+"])  self.__next_f.push([1,"147:["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" validate_signature"}]
+148:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"():"}]
+149:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"  signature "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" request.headers.get("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"x-bold-Signature\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", "}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+
+--- LINE 1367 ---
+
+"])  self.__next_f.push([1,"147:["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" validate_signature"}]
+148:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"():"}]
+149:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"  signature "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" request.headers.get("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"x-bold-Signature\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", "}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+14a:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"  body "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" request.get_data("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"parse_form_data"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"False"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+14b:["$","span",null,{"children":" "}]
+
+--- LINE 1374 ---
+
+14e:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      encoded "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64.b64encode(str_message.encode("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"utf-8\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"))"}]]}]
+14f:["$","span",null,{"children":" "}]
+"])  self.__next_f.push([1,"150:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac.new("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"key"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\u003csecret_key\u003e\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":".encode(), "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"digestmod"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"hashlib.sha256, "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"msg"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"encoded).hexdigest()"}]]}]
+"])  self.__next_f.push([1,"151:["$","span",null,{"children":" "}]
+152:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      is_valid_request "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac.compare_digest(hashed.encode(), signature.encode())"}]]}]
+
+--- LINE 1376 ---
+
+"])  self.__next_f.push([1,"150:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac.new("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"key"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\u003csecret_key\u003e\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":".encode(), "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"digestmod"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"hashlib.sha256, "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"msg"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"encoded).hexdigest()"}]]}]
+"])  self.__next_f.push([1,"151:["$","span",null,{"children":" "}]
+152:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      is_valid_request "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac.compare_digest(hashed.encode(), signature.encode())"}]]}]
+153:["$","span",null,{"children":" "}]
+154:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"      if"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" is_valid_request:"}]]}]
+
+--- LINE 1387 ---
+
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" ("}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"crypto/hmac"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"crypto/sha256"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"encoding/base64"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\""}]]}],"\
+
+--- LINE 1395 ---
+
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]}],"\
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"func"}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" validateSignature"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"w"}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" http"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"ResponseWriter"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", "}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"r"}],"$L1c9","$L1ca","$L1cb","$L1cc","$L1cd","$L1ce"]}],"\
+","$L1cf","\
+","$L1d0","\
+
+--- LINE 1417 ---
+
+","$L1e2"]}]]}]]}]]}]
+"])  self.__next_f.push([1,"15b:["$","$L46",null,{"children":[["$","h3",null,{"id":"nestjs","style":{"visibility":"hidden","width":0,"height":0},"children":"Nest.js"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L146",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" { NextApiRequest, NextApiResponse } "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'next'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"import"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" getRawBody "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'raw-body'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}],"\
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"export"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" config"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}],"\
+
+--- LINE 1494 ---
+
+","$L228","\
+","$L229"]}]]}]]}]]}]
+"])  self.__next_f.push([1,"15d:["$","$L46",null,{"children":[["$","h3",null,{"id":"php","style":{"visibility":"hidden","width":0,"height":0},"children":"PHP"}],["$","div",null,{"data-pagefind-ignore":"all","className":"nextra-code x:relative x:not-first:mt-[1.25em]","children":["$undefined",["$","pre",null,{"className":"x:group x:focus-visible:nextra-focus x:overflow-x-auto x:subpixel-antialiased x:text-[.9em] x:bg-white x:dark:bg-black x:py-4 x:ring-1 x:ring-inset x:ring-gray-300 x:dark:ring-neutral-700 x:contrast-more:ring-gray-900 x:contrast-more:dark:ring-gray-50 x:contrast-more:contrast-150 x:rounded-md not-prose","tabIndex":"0","children":[["$","div",null,{"className":"x:group-hover:opacity-100 x:group-focus:opacity-100 x:opacity-0 x:transition x:focus-within:opacity-100 x:flex x:gap-1 x:absolute x:right-4 x:top-2","children":[["$","$L47",null,{"children":["$","svg",null,{"viewBox":"0 0 24 24","fill":"currentColor","height":"1em","children":["$","path",null,{"d":"M4 19h6v-2H4v2zM20 5H4v2h16V5zm-3 6H4v2h13.25c1.1 0 2 .9 2 2s-.9 2-2 2H15v-2l-3 3l3 3v-2h2c2.21 0 4-1.79 4-4s-1.79-4-4-4z"}]}]}],["$","$L146",null,{"className":""}]]}],["$","code",null,{"className":"nextra-code","dir":"ltr","children":[["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$signature "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" $_SERVER["}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'HTTP_X_BOLD_SIGNATURE'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"];"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$strMessage "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" file_get_contents"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'php://input'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$encoded "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" base64_encode"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"($strMessage);"}]]}],"\
+
+--- LINE 1498 ---
+
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$encoded "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" base64_encode"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"($strMessage);"}]]}],"\
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Crear HMAC usando la llave secreta"}]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$secretKey "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'LLAVE_SECRETA'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hash_hmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", $encoded, $secretKey);"}]]}],"\
+
+--- LINE 1499 ---
+
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Crear HMAC usando la llave secreta"}]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$secretKey "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'LLAVE_SECRETA'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hash_hmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", $encoded, $secretKey);"}]]}],"\
+",["$","span",null,{"children":" "}],"\
+
+--- LINE 1500 ---
+
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Crear HMAC usando la llave secreta"}]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$secretKey "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'LLAVE_SECRETA'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hash_hmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", $encoded, $secretKey);"}]]}],"\
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Comparar firmas"}]}],"\
+
+--- LINE 1502 ---
+
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"$$hashed "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hash_hmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", $encoded, $secretKey);"}]]}],"\
+",["$","span",null,{"children":" "}],"\
+",["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Comparar firmas"}]}],"\
+",["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"if"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" ("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"hash_equals"}],"$L22a"]}],"\
+","$L22b","\
+
+--- LINE 1629 ---
+
+1ce:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":") {"}]
+1cf:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"payload"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"*"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"bytes, "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"*"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" :="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" io."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"ReadAll"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(r.Body)"}]]}]
+1d0:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"sign "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" r.Header."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"Get"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"x-bold-signature\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+1d1:["$","span",null,{"children":" "}]
+1d2:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      payload_string "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64.StdEncoding."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"EncodeToString"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(payload_bytes)"}]]}]
+
+--- LINE 1633 ---
+
+1d2:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      payload_string "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64.StdEncoding."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"EncodeToString"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(payload_bytes)"}]]}]
+1d3:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      sign_bytes "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" []"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"byte"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(sign)"}]]}]
+1d4:["$","span",n"])  self.__next_f.push([1,"ull,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      secret_bytes "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" []"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"byte"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\u003csecret_key\u003e\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+1d5:["$","span",null,{"children":" "}]
+1d6:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      mac "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"New"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(sha256.New, secret_bytes)"}]]}]
+
+--- LINE 1635 ---
+
+1d4:["$","span",n"])  self.__next_f.push([1,"ull,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      secret_bytes "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" []"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"byte"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"\\"\u003csecret_key\u003e\\""}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+1d5:["$","span",null,{"children":" "}]
+1d6:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      mac "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"New"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(sha256.New, secret_bytes)"}]]}]
+1d7:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      mac."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"Write"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"([]"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"byte"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(payload_string))"}]]}]
+1d8:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      sign_calculated "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" mac."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"Sum"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"nil"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")"}]]}]
+
+--- LINE 1641 ---
+
+1da:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      string_mac "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hex."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"EncodeToString"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(sign_calculated)"}]]}]
+1db:["$","span",null,{"children":" "}]
+1dc:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"      is_valid_request "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":":="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" hmac."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"Equal"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"([]"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"byte"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(string_mac), sign_bytes)"}]]}]
+1dd:["$","span",null,{"children":" "}]
+1de:["$","span",null,{""])  self.__next_f.push([1,"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"      if"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" is_valid_request {"}]]}]
+
+--- LINE 1656 ---
+
+1e9:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"  try"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+1ea:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    // Captura el cuerpo crudo como un Buffer"}]}]
+1eb:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" rawBody"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" await"}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" getRawBody"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(req);"}]]}]
+1ec:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" body"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" rawBody."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"toString"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'utf-8'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"); "}],["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Convierte el Buffer a string si es necesario"}]]}]
+1ed:["$","span",null,{"children":" "}]
+
+--- LINE 1657 ---
+
+1ea:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    // Captura el cuerpo crudo como un Buffer"}]}]
+1eb:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" rawBody"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" await"}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":" getRawBody"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(req);"}]]}]
+1ec:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" body"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" rawBody."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"toString"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'utf-8'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"); "}],["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Convierte el Buffer a string si es necesario"}]]}]
+1ed:["$","span",null,{"children":" "}]
+1ee:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" { "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"headers"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" } "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style""])  self.__next_f.push([1,":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req;"}]]}]
+
+--- LINE 1660 ---
+
+1ed:["$","span",null,{"children":" "}]
+1ee:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" { "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"headers"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" } "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style""])  self.__next_f.push([1,":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req;"}]]}]
+1ef:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" receivedSignature"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" headers["}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'x-bold-signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"] "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"as"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" string"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}]
+1f0:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'req.body '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", body);"}]]}]
+1f1:["$","span",null,{"children":" "}]
+
+--- LINE 1663 ---
+
+1f0:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'req.body '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", body);"}]]}]
+1f1:["$","span",null,{"children":" "}]
+1f2:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" secretKey"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" ''"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"; "}],["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Llave secreta"}]]}]
+1f3:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" encodedBody"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"encode"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(body); "}],["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"// Codifica el cuerpo crudo"}]]}]
+1f4:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'encoded '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", encodedBody);"}]]}]
+
+--- LINE 1667 ---
+
+1f4:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'encoded '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", encodedBody);"}]]}]
+1f5:["$","span",null,{"children":" "}]
+"])  self.__next_f.push([1,"1f6:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hashed"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"createHmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", secretKey)."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"update"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(encodedBody)."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"digest"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hex'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+"])  self.__next_f.push([1,"1f7:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'receivedSignature '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(receivedSignature)."}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"length"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+1f8:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hashed '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(hashed)."}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"length"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+
+--- LINE 1668 ---
+
+1f5:["$","span",null,{"children":" "}]
+"])  self.__next_f.push([1,"1f6:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hashed"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"createHmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", secretKey)."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"update"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(encodedBody)."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"digest"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hex'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+"])  self.__next_f.push([1,"1f7:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'receivedSignature '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(receivedSignature)."}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"length"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+1f8:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hashed '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(hashed)."}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"length"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+1f9:["$","span",null,{"children":" "}]
+
+--- LINE 1671 ---
+
+1f8:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hashed '"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(hashed)."}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"length"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+1f9:["$","span",null,{"children":" "}]
+1fa:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" isValidRequest"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"timingSafeEqual"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(hashed), Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(receivedSignature));"}]]}]
+1fb:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'is valid'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", isValidRequest);"}]]}]
+1fc:["$","span",null,{"children":" "}]
+
+--- LINE 1687 ---
+
+208:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"}"}]}]
+209:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(express."}]
+20a:["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"raw"}]
+20b:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"({ type: "}]
+20c:["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'application/json'"}]
+
+--- LINE 1692 ---
+
+20d:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" }));"}]
+20e:["$","span",null,{"children":" "}]
+20f:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E",""])  self.__next_f.push([1,"--shiki-dark":"#E1E4E8"},"children":"app."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"post"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'/signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", ("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"req"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"res"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":") "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"=\u003e"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+210:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" { "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"body"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" } "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req;"}]]}]
+211:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" receivedSignature"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req.headers["}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'x-bold-signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"];"}]]}]
+
+--- LINE 1694 ---
+
+20f:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E",""])  self.__next_f.push([1,"--shiki-dark":"#E1E4E8"},"children":"app."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"post"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'/signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", ("}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"req"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", "}],["$","span",null,{"style":{"--shiki-light":"#E36209","--shiki-dark":"#FFAB70"},"children":"res"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":") "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"=\u003e"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+210:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" { "}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"body"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" } "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req;"}]]}]
+211:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" receivedSignature"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" req.headers["}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'x-bold-signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"];"}]]}]
+212:["$","span",null,{"children":" "}]
+213:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" encoded"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"encode"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(body);"}]]}]
+
+--- LINE 1697 ---
+
+212:["$","span",null,{"children":" "}]
+213:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" encoded"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" base64."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"encode"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(body);"}]]}]
+214:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" secretKey"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" ''"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"; "}]]}]
+215:["$","span",null,{"children":" "}]
+216:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hashed"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto"}]]}]
+
+--- LINE 1700 ---
+
+215:["$","span",null,{"children":" "}]
+216:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" hashed"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto"}]]}]
+217:["$","span",null,{"children":[["$","span",null,{"style"])  self.__next_f.push([1,"":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        ."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"createHmac"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'sha256'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":", secretKey)"}]]}]
+218:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        ."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"update"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(encoded)"}]]}]
+219:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        ."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"digest"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hex'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+
+--- LINE 1704 ---
+
+219:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        ."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"digest"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'hex'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+21a:["$","span",null,{"children":" "}]
+21b:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    const"}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":" isValidRequest"}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":" ="}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" crypto."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"timingSafeEqual"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(hashed), Buffer."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"from"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(receivedSignature));"}]]}]
+21c:["$","span",null,{"children":" "}]
+21d:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    if"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(isValidRequest){"}]]}]
+
+--- LINE 1708 ---
+
+21d:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    if"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"(isValidRequest){"}]]}]
+21e:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"        // 200 OK"}]}]
+21f:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        res."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"json"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"({ message: "}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'Valid signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" });"}]]}]
+220:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    }"}]}]
+221:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    else"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+
+--- LINE 1711 ---
+
+220:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    }"}]}]
+221:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    else"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+222:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"        // 400 Bad Request invalid signature"}]}]
+223:["$","span",null,{"children":[["$","span",nul"])  self.__next_f.push([1,"l,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        res."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"status"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"400"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"json"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"({ message: "}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'Invalid signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" });"}]]}]
+224:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    }"}]}]
+
+--- LINE 1712 ---
+
+221:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"    else"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+222:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"        // 400 Bad Request invalid signature"}]}]
+223:["$","span",null,{"children":[["$","span",nul"])  self.__next_f.push([1,"l,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"        res."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"status"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"400"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":")."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"json"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"({ message: "}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"'Invalid signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" });"}]]}]
+224:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    }"}]}]
+225:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"});"}]}]
+
+--- LINE 1719 ---
+
+228:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"    console."}],["$","span",null,{"style":{"--shiki-light":"#6F42C1","--shiki-dark":"#B392F0"},"children":"log"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"`Server is running on port ${"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"port"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":"}`"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+229:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"});"}]}]
+22a:["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"($hashed, $signature)) {"}]
+22b:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    /** Código para guardar el estado de la transacción"}]}]
+22c:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    * ....."}]}]
+
+--- LINE 1727 ---
+
+230:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"    echo"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'Valid request'"}],"])  self.__next_f.push([1,"["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}]
+231:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"} "}],["$","span",null,{"style":{"--shiki-light":"#D73A49","--shiki-dark":"#F97583"},"children":"else"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":" {"}]]}]
+232:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    // Enviar respuesta 400 por firma inválida"}]}]
+233:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"    http_response_code"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"400"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+234:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"    echo"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'Invalid signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}]
+
+--- LINE 1729 ---
+
+232:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#6A737D","--shiki-dark":"#6A737D"},"children":"    // Enviar respuesta 400 por firma inválida"}]}]
+233:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"    http_response_code"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"("}],["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"400"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":");"}]]}]
+234:["$","span",null,{"children":[["$","span",null,{"style":{"--shiki-light":"#005CC5","--shiki-dark":"#79B8FF"},"children":"    echo"}],["$","span",null,{"style":{"--shiki-light":"#032F62","--shiki-dark":"#9ECBFF"},"children":" 'Invalid signature'"}],["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":";"}]]}]
+235:["$","span",null,{"children":["$","span",null,{"style":{"--shiki-light":"#24292E","--shiki-dark":"#E1E4E8"},"children":"}"}]}]
+"])  self.__next_f.push([1,"b:[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]

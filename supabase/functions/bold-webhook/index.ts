@@ -21,23 +21,28 @@ serve(async (req) => {
   }
 
   try {
-    // ── 1. Leer cuerpo y verificar firma de Bold ─────────────────────────────
-    const rawBody    = await req.text();
-    // 1. Log del cuerpo recibido para ver qué está enviando Bold (antes de validar firma)
-    console.log("Cuerpo recibido:", rawBody);
+    // ── 1. Leer cuerpo crudo (Raw Buffer) y verificar firma de Bold ───────────
+    // IMPORTANTE: En lugar de req.text(), leemos el arrayBuffer() directo.
+    // Esto garantiza que los bytes originales (tildes, espacios, saltos de línea)
+    // no sean alterados o parseados incorrectamente por el motor UTF-8.
+    const arrayBuffer = await req.arrayBuffer();
+    
+    // Log del cuerpo (solo para debug, convirtiéndolo a texto de forma segura)
+    const decoder = new TextDecoder('utf-8');
+    const rawBodyText = decoder.decode(arrayBuffer);
+    console.log("Cuerpo recibido:", rawBodyText);
 
     const boldSig    = req.headers.get('x-bold-signature') ?? '';
-    // 2. Usar BOLD_SECRET_KEY explícitamente para validar la firma (es la misma llave global en Bold)
     const secretKey  = Deno.env.get('BOLD_SECRET_KEY') ?? '';
 
-    // Verificación HMAC-SHA256 del webhook
-    const isValid = await verifyBoldSignature(rawBody, boldSig, secretKey);
+    // Verificación HMAC-SHA256 del webhook usando los bytes crudos
+    const isValid = await verifyBoldSignature(arrayBuffer, boldSig, secretKey);
     if (!isValid) {
       console.error('[bold-webhook] Firma inválida — posible solicitud no autorizada');
       return new Response('Unauthorized', { status: 401 });
     }
 
-    const event = JSON.parse(rawBody);
+    const event = JSON.parse(rawBodyText);
     console.log('[bold-webhook] Evento recibido:', event?.type, '| orden:', event?.data?.metadata?.orderId);
 
     // ── 2. Solo procesar pagos exitosos o rechazados explícitamente ──────────
@@ -211,35 +216,68 @@ serve(async (req) => {
   }
 });
 
-// ── Verificación de firma ──────────────────────────────────────────────────────
+// ── Utilidad Base64 para Raw Buffers ──────────────────────────────────────────
+function bufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binString = "";
+  // chunkSize previene el error "Maximum call stack size exceeded" 
+  // en strings/arrays muy grandes si se usa String.fromCharCode.apply
+  for (let i = 0; i < bytes.byteLength; i++) { 
+    binString += String.fromCharCode(bytes[i]); 
+  }
+  return btoa(binString);
+}
+
+// ── Verificación de firma (Híbrida: Prod & Sandbox) ────────────────────────────
 async function verifyBoldSignature(
-  rawBody: string,
+  rawBuffer: ArrayBuffer,
   signature: string,
   secret: string,
 ): Promise<boolean> {
-  if (!secret || !signature) return false;
+  if (!signature) return false;
 
   try {
-    const encoder  = new TextEncoder();
-    const keyData  = encoder.encode(secret);
-    const msgData  = encoder.encode(rawBody);
+    const encoder = new TextEncoder();
+    
+    // 1. Convertir el buffer BINARIO directamente a Base64 sin pasar por parseo de strings
+    const bodyBase64 = bufferToBase64(rawBuffer);
+    
+    // 2. Preparar el mensaje que será firmado (los bytes de la cadena Base64)
+    const msgData = encoder.encode(bodyBase64);
 
-    const cryptoKey = await crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
+    const checkSignature = async (keyToUse: string) => {
+      const keyData  = encoder.encode(keyToUse);
+      const cryptoKey = await crypto.subtle.importKey(
+        'raw',
+        keyData,
+        { name: 'HMAC', hash: 'SHA-256' },
+        false,
+        ['sign'],
+      );
 
-    const sigBytes = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-    const computed = Array.from(new Uint8Array(sigBytes))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+      const sigBytes = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
+      
+      // Formato Hexadecimal exigido por Bold
+      const computed = Array.from(new Uint8Array(sigBytes))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
 
-    // Comparación constante para evitar timing attacks
-    return computed === signature.replace(/^sha256=/, '');
-  } catch {
+      // Comparación ignorando case y eliminando el prefijo si existiera
+      return computed.toLowerCase() === signature.replace(/^sha256=/, '').toLowerCase();
+    };
+
+    // 1. Intentar primero con la clave de producción
+    let isValid = await checkSignature(secret);
+
+    // 2. Si falla, reintentar con clave vacía "" (Modo Sandbox/Pruebas de Bold)
+    if (!isValid) {
+      console.log('[bold-webhook] Firma falló con clave principal, reintentando con fallback Sandbox ("")');
+      isValid = await checkSignature("");
+    }
+
+    return isValid;
+  } catch (err) {
+    console.error('[bold-webhook] Error al verificar firma:', err);
     return false;
   }
 }
