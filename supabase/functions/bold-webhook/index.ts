@@ -46,14 +46,16 @@ serve(async (req) => {
     console.log('[bold-webhook] Evento recibido:', event?.type, '| orden:', event?.data?.metadata?.orderId);
 
     // ── 2. Solo procesar pagos exitosos o rechazados explícitamente ──────────
-    // Bold envía: payment.approved, payment.completed, etc. según su versión.
+    // Bold envía: SALE_APPROVED, SALE_REJECTED o payment.approved según la integración
     const isSuccess =
+      event?.type === 'SALE_APPROVED'     ||
       event?.type === 'payment.approved'  ||
       event?.type === 'payment.completed' ||
       event?.data?.status === 'APPROVED'  ||
       event?.data?.status === 'COMPLETED';
 
     const isRejected =
+      event?.type === 'SALE_REJECTED'     ||
       event?.type === 'payment.rejected'  ||
       event?.type === 'payment.failed' ||
       event?.data?.status === 'REJECTED'  ||

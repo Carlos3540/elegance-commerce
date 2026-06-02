@@ -62,7 +62,7 @@ const StefaniaCEO = () => {
           </div>
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }} style={{ marginTop: 48, display: "flex", alignItems: "center", gap: 24 }}>
             <div>
-              <p style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.05em" }}>Stefania</p>
+              <p style={{ fontSize: 18, fontWeight: 900, color: "#fff", fontFamily: "'DM Sans', sans-serif", letterSpacing: "0.05em" }}>Stephanie</p>
               <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.2em", marginTop: 4 }}>Creative Director & Founder</p>
             </div>
             <div style={{ width: 1, height: 40, background: "rgba(255,255,255,0.1)" }} />
