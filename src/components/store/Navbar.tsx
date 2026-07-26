@@ -99,8 +99,18 @@ const SearchOverlay = ({ open, onClose }: { open: boolean; onClose: () => void }
   );
 };
 
-/* ── Auth gate modal ──────────────────────────────────────────── */
-const AuthGateModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+/* ── Auth gate modal (favoritos sin sesión) ───────────────────── */
+// Abre el LoginDialog del sistema en lugar de navegar a /login o /registro
+// (esas rutas no existen — la autenticación es por modal en esta app).
+const AuthGateModal = ({
+  open,
+  onClose,
+  onOpenLogin,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpenLogin: () => void;
+}) => {
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", h);
@@ -126,14 +136,13 @@ const AuthGateModal = ({ open, onClose }: { open: boolean; onClose: () => void }
             <h2 style={{ fontSize: 22, fontWeight: 900, color: "#111", letterSpacing: "-0.03em", marginBottom: 8 }}>Inicia sesión para guardar favoritos</h2>
             <p style={{ fontSize: 14, color: "#aaa", lineHeight: 1.6, marginBottom: 28 }}>Guarda tus prendas favoritas y accédelas desde cualquier dispositivo.</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <Link to="/login" onClick={onClose}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 100, background: "#111", color: "#fff", textDecoration: "none", fontSize: 12, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase" }}>
-                Iniciar sesión
-              </Link>
-              <Link to="/registro" onClick={onClose}
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "12px 0", borderRadius: 100, border: "1.5px solid #e5e5e5", color: "#555", textDecoration: "none", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-                Crear cuenta
-              </Link>
+              {/* ✅ Abre el LoginDialog del sistema — no navega a rutas inexistentes */}
+              <button
+                type="button"
+                onClick={() => { onClose(); onOpenLogin(); }}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "13px 0", borderRadius: 100, background: "#111", color: "#fff", border: "none", fontSize: 12, fontWeight: 800, letterSpacing: "0.07em", textTransform: "uppercase", cursor: "pointer", width: "100%", fontFamily: "'DM Sans', sans-serif" }}>
+                Iniciar sesión / Registrarse
+              </button>
             </div>
           </motion.div>
         </>
@@ -203,8 +212,9 @@ const Navbar = () => {
       
 
       <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
-      <AuthGateModal open={authGate}   onClose={() => setAuthGate(false)} />
-      <LoginDialog    open={loginOpen}  onOpenChange={setLoginOpen} />
+      {/* ✅ AuthGateModal recibe onOpenLogin para abrir el LoginDialog correcto */}
+      <AuthGateModal open={authGate} onClose={() => setAuthGate(false)} onOpenLogin={() => setLoginOpen(true)} />
+      <LoginDialog   open={loginOpen} onOpenChange={setLoginOpen} />
 
       <header style={{
         position: "fixed", 

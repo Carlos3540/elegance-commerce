@@ -74,11 +74,23 @@ export const useFavorites = (): UseFavoritesReturn => {
     }
   }, [user?.id]);
 
-  useEffect(() => { fetchFavorites(); }, [fetchFavorites]);
-
-  /* ── Realtime ── */
+  /* ── Fetch + reset on auth change ── */
   useEffect(() => {
+    // Limpiamos favoritos al cerrar sesión para evitar estado basura
+    if (!user?.id) {
+      setFavorites([]);
+      return;
+    }
+    fetchFavorites();
+  }, [user?.id, fetchFavorites]);
+
+  /* ── Realtime ─────────────────────────────────────────────── */
+  useEffect(() => {
+    // GUARD: sin usuario autenticado no subscribimos nada.
+    // Antes, el canal se creía con filter `user_id=eq.undefined`,
+    // lo que generaba errores 401/400 en el websocket de Supabase.
     if (!user?.id) return;
+
     const channel = supabase
       .channel(`fav:${user.id}`)
       .on("postgres_changes", {

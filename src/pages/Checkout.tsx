@@ -42,6 +42,7 @@ import {
   type CartItemForOrder,
 } from '@/services/boldPayment';
 import type { CheckoutFormData } from '@/lib/supabase';
+import LoginDialog from '@/components/auth/LoginDialog'; // ✅ Para el gate de checkout
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // HELPERS
@@ -123,16 +124,29 @@ const Checkout: React.FC = () => {
   const shippingCost = cheapest?.price ?? 0;
   const total        = subtotal + shippingCost;
 
-  // ── Redireccionamiento ─────────────────────────────────────────
+  // ── Login gate para checkout ───────────────────────────────────────────
+  // Si un usuario anónimo llega directo a /checkout (ej: via URL),
+  // mostramos el LoginDialog con mensaje explicativo en lugar de
+  // redirigirlo silenciosamente (lo que causaba experiencia pobre).
+  const [loginGateOpen, setLoginGateOpen] = useState(false);
+
   useEffect(() => {
-    if (!isLoading) {
-      if (!user) {
-        navigate('/');
-        return;
+    if (isLoading) return; // Esperamos que AuthContext resuelva la sesión
+
+    if (!user) {
+      if (items.length > 0) {
+        // Guest con carrito: mostrar login con mensaje
+        setLoginGateOpen(true);
+      } else {
+        // Guest sin carrito: ir a la tienda directamente
+        navigate('/tienda', { replace: true });
       }
-      if (items.length === 0) {
-        navigate('/tienda');
-      }
+      return;
+    }
+
+    // Autenticado pero carrito vacío
+    if (items.length === 0) {
+      navigate('/tienda', { replace: true });
     }
   }, [user, items, navigate, isLoading]);
 
@@ -160,6 +174,45 @@ const Checkout: React.FC = () => {
       </div>
     );
   }
+
+  // ── Gate de autenticación para invitados con carrito ─────────────
+  // Si el usuario llega a /checkout sin sesión pero con productos en
+  // el carrito local, mostramos el LoginDialog en vez de una pantalla
+  // en blanco. Al cerrar sin logearse, lo enviamos a la tienda.
+  if (!user) {
+    return (
+      <>
+        <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 gap-4">
+          <ShoppingBag className="w-12 h-12 text-gray-300" />
+          <h2 className="text-xl font-bold text-gray-900">Inicia sesión para continuar</h2>
+          <p className="text-gray-500 text-sm text-center max-w-xs">
+            Debes iniciar sesión o registrarte para finalizar tu compra. Tu carrito se guardará automáticamente.
+          </p>
+          <button
+            onClick={() => setLoginGateOpen(true)}
+            className="mt-2 bg-gray-900 text-white font-bold text-sm uppercase tracking-widest px-8 py-4 rounded-2xl hover:bg-gray-700 transition-colors"
+          >
+            Iniciar sesión / Registrarse
+          </button>
+          <button
+            onClick={() => navigate('/tienda', { replace: true })}
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            Volver a la tienda
+          </button>
+        </div>
+        <LoginDialog
+          open={loginGateOpen}
+          onOpenChange={(open) => {
+            setLoginGateOpen(open);
+            // Si cierra el dialog sin loguearse, volvemos a la tienda
+            if (!open && !user) navigate('/tienda', { replace: true });
+          }}
+        />
+      </>
+    );
+  }
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // handlePrepararBold — carga SDK + pide firma + crea instancia Bold
