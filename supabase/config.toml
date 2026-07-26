@@ -1,0 +1,24 @@
+# supabase/config.toml
+# Configuración del proyecto Supabase (Evolet 96)
+# Referencia: https://supabase.com/docs/guides/local-development/cli/config
+
+# ── Edge Functions ──────────────────────────────────────────────────────────
+
+# bold-webhook: NO requiere JWT de Supabase.
+# Bold envía su propio header x-bold-signature (HMAC-SHA256) para autenticar.
+# Sin verify_jwt = false, Supabase Gateway rechaza el request con 401
+# antes de que la función se ejecute → el webhook nunca llega.
+[functions.bold-webhook]
+verify_jwt = false
+
+# bold-checkout: Sí requiere JWT (llamada desde el frontend autenticado)
+[functions.bold-checkout]
+verify_jwt = true
+
+# shipping-manager: Llamada interna (service role) → no necesita JWT de usuario
+[functions.shipping-manager]
+verify_jwt = false
+
+# payment-handler: Llamada interna → no necesita JWT de usuario
+[functions.payment-handler]
+verify_jwt = false

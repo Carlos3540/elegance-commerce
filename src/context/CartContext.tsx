@@ -46,7 +46,7 @@ const saveGuestCart = (items: GuestItem[]) => {
 };
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const [cartId, setCartId]       = useState<string | null>(null);
   const [items, setItems]         = useState<(CartItem | GuestItem)[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -145,12 +145,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // ── Inicializar ───────────────────────────────────────────────
+  // NOTA: Solo depende de `user`, NO de `profile`.
+  // Incluir `profile` causaba que el carrito se re-inicializara cada vez que
+  // AuthContext terminaba de cargar el perfil, generando peticiones extra
+  // que contribuían al error 429 de Supabase.
   useEffect(() => {
-    if (!user || !profile) {
-      if (!user) {
-        setCartId(null);
-        loadGuest();
-      }
+    if (!user) {
+      setCartId(null);
+      loadGuest();
       return;
     }
 
@@ -199,7 +201,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     init();
     return () => { if (channel) supabase.removeChannel(channel); };
-  }, [user, profile, getOrCreateCart, fetchItems, loadGuest, migrateGuestCart, clearGuestCart]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]); // Solo reacciona a cambios de sesión (login/logout), no al perfil
 
   // ── Agregar producto ──────────────────────────────────────────
   const addItem = useCallback(async (product: Product, qty: number = 1) => {
