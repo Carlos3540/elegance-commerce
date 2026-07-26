@@ -72,29 +72,44 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // ── SUPABASE: obtener o crear carrito ─────────────────────────
   const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
-    const { data: existing, error: findErr } = await supabase
-      .from('carts')
-      .select('id')
-      .eq('user_id', userId)
-      .maybeSingle();
+    const tryOnce = async () => {
+      const { data: existing, error: findErr } = await supabase
+        .from('carts')
+        .select('id')
+        .eq('user_id', userId)
+        .maybeSingle();
 
-    if (findErr) {
-      console.error('CartContext: error buscando carrito:', findErr.message);
-      throw findErr;
+      if (findErr) {
+        console.error('CartContext: error buscando carrito:', findErr.message);
+        throw findErr;
+      }
+      if (existing) return existing.id;
+
+      const { data: newCart, error: insertErr } = await supabase
+        .from('carts')
+        .insert({ user_id: userId })
+        .select('id')
+        .maybeSingle();
+
+      if (insertErr) {
+        console.error('CartContext: error creando carrito:', insertErr.code, insertErr.message);
+        throw insertErr;
+      }
+      return newCart?.id ?? '';
+    };
+
+    try {
+      return await tryOnce();
+    } catch (err: any) {
+      const shouldRetry = err?.code === '42501' || err?.status === 401;
+
+      if (!shouldRetry) throw err;
+
+      const { error: refreshErr } = await supabase.auth.refreshSession();
+      if (refreshErr) throw refreshErr;
+
+      return await tryOnce();
     }
-    if (existing) return existing.id;
-
-    const { data: newCart, error: insertErr } = await supabase
-      .from('carts')
-      .insert({ user_id: userId })
-      .select('id')
-      .maybeSingle();
-
-    if (insertErr) {
-      console.error('CartContext: error creando carrito:', insertErr.code, insertErr.message);
-      throw insertErr;
-    }
-    return newCart?.id ?? '';
   }, []);
 
   // ── SUPABASE: cargar items ────────────────────────────────────
@@ -174,13 +189,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // 💥 NUEVO & CRÍTICO: Capturamos los datos locales INMEDIATAMENTE al autenticarse
         const guestItemsToMigrate = loadGuestCart();
-        
+
         // 💥 NUEVO: Limpiamos el localStorage al instante para evitar ejecuciones duplicadas
         if (guestItemsToMigrate.length > 0) {
           clearGuestCart();
         }
 
-        const cId = await getOrCreateCart(user.id);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          setIsLoading(false);
+          return;
+        }
+
+        const uid = session.user.id;
+        const cId = await getOrCreateCart(uid);
         if (!cId) {
           setIsLoading(false);
           return;
@@ -191,7 +213,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (guestItemsToMigrate.length > 0) {
           await migrateGuestCart(cId, guestItemsToMigrate);
         }
-        
+
         await fetchItems(cId);
 
         // Realtime
