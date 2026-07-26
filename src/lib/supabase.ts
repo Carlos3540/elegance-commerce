@@ -108,6 +108,8 @@ export interface CartItem {
   product_id: string;
   quantity: number;
   unit_price: number;
+  size?: string | null;
+  color?: string | null;
   created_at: string;
   // join
   product?: Product;
@@ -160,6 +162,8 @@ export interface OrderItem {
   unit_price: number;
   quantity: number;
   subtotal: number;
+  size?: string | null;
+  color?: string | null;
   created_at: string;
 }
 

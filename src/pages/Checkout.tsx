@@ -303,6 +303,8 @@ const Checkout: React.FC = () => {
         product_image: item.product?.image_url ?? '',
         unit_price:    item.unit_price,
         quantity:      item.quantity,
+        size:          (item as any).size || null,
+        color:         (item as any).color || null,
       }));
 
       const result = await crearOrdenEnSupabase({
@@ -787,7 +789,12 @@ const Checkout: React.FC = () => {
                       <p className="text-sm font-semibold text-gray-900 truncate">
                         {item.product?.name}
                       </p>
-                      <p className="text-xs text-gray-400">Cant: {item.quantity}</p>
+                      {((item as any).size || (item as any).color) && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {(item as any).size && `Talla: ${(item as any).size}`}{(item as any).size && (item as any).color && ' | '}{(item as any).color && `Color: ${(item as any).color}`}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-400 mt-1">Cant: {item.quantity}</p>
                       <p className="text-sm font-bold text-gray-900 mt-1">
                         {COP(item.unit_price * item.quantity)}
                       </p>

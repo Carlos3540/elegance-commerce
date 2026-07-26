@@ -238,7 +238,7 @@ const ProductDetail = () => {
     }
     setIsAdding(true);
     try {
-      await addItem(product!, qty);
+      await addItem(product!, qty, selectedSize, selectedColor);
       setAddedAnim(true);
       setTimeout(() => { setAddedAnim(false); setIsOpen(true); }, 900);
     } finally {

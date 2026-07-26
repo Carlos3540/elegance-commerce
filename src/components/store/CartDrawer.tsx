@@ -145,6 +145,11 @@ const CartDrawer = () => {
                               {productName}
                             </p>
                           </Link>
+                          {(item.size || item.color) && (
+                            <p style={{ fontSize: 11, color: "#6b7280", marginBottom: 6 }}>
+                              {item.size && `Talla: ${item.size}`}{item.size && item.color && ' | '}{item.color && `Color: ${item.color}`}
+                            </p>
+                          )}
                           <p style={{ fontSize: 14, fontWeight: 800, color: "#111", marginBottom: 10 }}>
                             {format(item.unit_price)}
                           </p>

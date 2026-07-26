@@ -9,6 +9,8 @@ interface GuestItem {
   product_id: string;
   quantity: number;
   unit_price: number;
+  size?: string | null;
+  color?: string | null;
   product: Product;
 }
 
@@ -17,7 +19,7 @@ interface CartContextType {
   isLoading: boolean;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
-  addItem: (product: Product, qty?: number) => Promise<void>;
+  addItem: (product: Product, qty?: number, size?: string | null, color?: string | null) => Promise<void>;
   removeItem: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -119,12 +121,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (guestItems.length === 0) return;
 
     for (const gi of guestItems) {
-      const { data: existing } = await supabase
+      let query = supabase
         .from('cart_items')
         .select('id, quantity')
         .eq('cart_id', cId)
-        .eq('product_id', gi.product_id)
-        .maybeSingle();
+        .eq('product_id', gi.product_id);
+
+      if (gi.size) query = query.eq('size', gi.size);
+      else query = query.is('size', null);
+
+      if (gi.color) query = query.eq('color', gi.color);
+      else query = query.is('color', null);
+
+      const { data: existing } = await query.maybeSingle();
 
       if (existing) {
         await supabase
@@ -139,6 +148,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             product_id: gi.product_id,
             unit_price: gi.unit_price,
             quantity: gi.quantity,
+            size: gi.size || null,
+            color: gi.color || null,
           });
       }
     }
@@ -205,18 +216,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user?.id]); // Solo reacciona a cambios de sesión (login/logout), no al perfil o token refreshes
 
   // ── Agregar producto ──────────────────────────────────────────
-  const addItem = useCallback(async (product: Product, qty: number = 1) => {
+  const addItem = useCallback(async (product: Product, qty: number = 1, size: string | null = null, color: string | null = null) => {
     if (isGuest) {
       const current = loadGuestCart();
-      const idx = current.findIndex(i => i.product_id === product.id);
+      const idx = current.findIndex(i => i.product_id === product.id && i.size === size && i.color === color);
       if (idx >= 0) {
         current[idx].quantity = Math.min(current[idx].quantity + qty, product.stock);
       } else {
         current.push({
-          id: product.id,
+          id: `${product.id}-${size || ''}-${color || ''}-${Date.now()}`,
           product_id: product.id,
           quantity: qty,
           unit_price: product.price,
+          size,
+          color,
           product,
         });
       }
@@ -228,7 +241,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (!cartId) return;
 
-    const existing = items.find(i => i.product_id === product.id);
+    const existing = items.find(i => i.product_id === product.id && i.size === size && i.color === color);
 
     if (existing) {
       const newQty = Math.min(existing.quantity + qty, product.stock);
@@ -247,6 +260,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           product_id: product.id,
           unit_price: product.price,
           quantity: qty,
+          size,
+          color,
         })
         .select(`
           *,

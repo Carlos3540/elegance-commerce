@@ -30,6 +30,8 @@ export interface CartItemForOrder {
   product_image: string;
   unit_price:    number;
   quantity:      number;
+  size?:         string | null;
+  color?:        string | null;
 }
 
 export interface CreateOrderParams {
@@ -266,6 +268,8 @@ export async function crearOrdenEnSupabase(
     unit_price:    item.unit_price,
     quantity:      item.quantity,
     subtotal:      item.unit_price * item.quantity,
+    size:          item.size || null,
+    color:         item.color || null,
   }));
 
   const { error: itemsError } = await supabase
