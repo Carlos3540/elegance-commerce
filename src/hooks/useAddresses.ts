@@ -25,12 +25,14 @@ export const useAddresses = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
-    if (!user) { setAddresses([]); return; }
+    if (!user?.id) { setAddresses([]); return; }
     fetchAddresses();
-  }, [user, fetchAddresses]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, fetchAddresses]);
 
   const addAddress = async (address: Omit<Address, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;

@@ -35,12 +35,14 @@ export const useOrders = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
-    if (!user) { setOrders([]); return; }
+    if (!user?.id) { setOrders([]); return; }
     fetchOrders();
-  }, [user, fetchOrders]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, fetchOrders]);
 
   // Obtener estado del pago Bold de una orden específica
   const getBoldStatus = useCallback(async (orderId: string) => {
@@ -320,7 +322,8 @@ export const usePendingOrder = () => {
     } finally {
       setIsChecking(false);
     }
-  }, [user]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     checkPendingOrder();

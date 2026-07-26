@@ -202,7 +202,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     init();
     return () => { if (channel) supabase.removeChannel(channel); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]); // Solo reacciona a cambios de sesión (login/logout), no al perfil
+  }, [user?.id]); // Solo reacciona a cambios de sesión (login/logout), no al perfil o token refreshes
 
   // ── Agregar producto ──────────────────────────────────────────
   const addItem = useCallback(async (product: Product, qty: number = 1) => {
