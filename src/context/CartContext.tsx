@@ -1,5 +1,5 @@
 // src/context/CartContext.tsx
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase, CartItem, Product } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 
@@ -56,7 +56,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isGuest = !user;
 
-  // 💥 NUEVO: Función explícita para limpiar el localStorage de forma segura
+  // 💥 NUEVO: guardia contra ejecuciones concurrentes de init()
+  const initInFlightRef = useRef(false);
+
+  // Limpiar localStorage de forma segura
   const clearGuestCart = useCallback(() => {
     try {
       localStorage.removeItem(GUEST_CART_KEY);
@@ -70,19 +73,16 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems(loadGuestCart());
   }, []);
 
-  // ── SUPABASE: obtener o crear carrito ─────────────────────────
+  // ── SUPABASE: obtener o crear carrito (con reintento tras refresh) ──
   const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
-    const tryOnce = async () => {
+    const tryOnce = async (): Promise<string> => {
       const { data: existing, error: findErr } = await supabase
         .from('carts')
         .select('id')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (findErr) {
-        console.error('CartContext: error buscando carrito:', findErr.message);
-        throw findErr;
-      }
+      if (findErr) throw findErr;
       if (existing) return existing.id;
 
       const { data: newCart, error: insertErr } = await supabase
@@ -91,24 +91,26 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .select('id')
         .maybeSingle();
 
-      if (insertErr) {
-        console.error('CartContext: error creando carrito:', insertErr.code, insertErr.message);
-        throw insertErr;
-      }
+      if (insertErr) throw insertErr;
       return newCart?.id ?? '';
     };
 
     try {
       return await tryOnce();
     } catch (err: any) {
-      const shouldRetry = err?.code === '42501' || err?.status === 401;
-
-      if (!shouldRetry) throw err;
-
-      const { error: refreshErr } = await supabase.auth.refreshSession();
-      if (refreshErr) throw refreshErr;
-
-      return await tryOnce();
+      const isAuthIssue = err?.code === '42501' || err?.status === 401;
+      if (isAuthIssue) {
+        console.warn('CartContext: token no listo, forzando refresh y reintentando...');
+        try {
+          await supabase.auth.refreshSession();
+        } catch (refreshErr) {
+          console.error('CartContext: fallo al refrescar sesión:', refreshErr);
+        }
+        // Reintento único
+        return await tryOnce();
+      }
+      console.error('CartContext: error creando/buscando carrito:', err?.code, err?.message);
+      throw err;
     }
   }, []);
 
@@ -131,7 +133,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // ── SUPABASE: migrar carrito guest al loguearse ───────────────
-  // 💥 MODIFICADO: Ahora recibe los items directamente desde la memoria
   const migrateGuestCart = useCallback(async (cId: string, guestItems: GuestItem[]) => {
     if (guestItems.length === 0) return;
 
@@ -171,10 +172,6 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // ── Inicializar ───────────────────────────────────────────────
-  // NOTA: Solo depende de `user`, NO de `profile`.
-  // Incluir `profile` causaba que el carrito se re-inicializara cada vez que
-  // AuthContext terminaba de cargar el perfil, generando peticiones extra
-  // que contribuían al error 429 de Supabase.
   useEffect(() => {
     if (!user) {
       setCartId(null);
@@ -183,38 +180,55 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     let channel: ReturnType<typeof supabase.channel> | null = null;
+    let cancelled = false;
 
     const init = async () => {
+      // 💥 NUEVO: evita ejecuciones concurrentes de init()
+      if (initInFlightRef.current) return;
+      initInFlightRef.current = true;
+
       setIsLoading(true);
       try {
-        // 💥 NUEVO & CRÍTICO: Capturamos los datos locales INMEDIATAMENTE al autenticarse
-        const guestItemsToMigrate = loadGuestCart();
-
-        // 💥 NUEVO: Limpiamos el localStorage al instante para evitar ejecuciones duplicadas
-        if (guestItemsToMigrate.length > 0) {
-          clearGuestCart();
-        }
-
+        // 💥 NUEVO: espera sesión fresca (resuelve solo cuando el
+        // refresh de token en curso, si lo hay, ya terminó)
         const { data: { session } } = await supabase.auth.getSession();
+
+        if (cancelled) return;
+
         if (!session) {
           setIsLoading(false);
           return;
         }
 
         const uid = session.user.id;
+
+        if (import.meta.env.DEV) {
+          console.debug(
+            'CartContext init →',
+            session.access_token ? 'token presente' : 'SIN TOKEN',
+            'uid:', uid
+          );
+        }
+
+        const guestItemsToMigrate = loadGuestCart();
+        if (guestItemsToMigrate.length > 0) {
+          clearGuestCart();
+        }
+
         const cId = await getOrCreateCart(uid);
-        if (!cId) {
+        if (!cId || cancelled) {
           setIsLoading(false);
           return;
         }
         setCartId(cId);
 
-        // 💥 MODIFICADO: Migramos usando la copia segura que guardamos en memoria
         if (guestItemsToMigrate.length > 0) {
           await migrateGuestCart(cId, guestItemsToMigrate);
         }
 
         await fetchItems(cId);
+
+        if (cancelled) return;
 
         // Realtime
         channel = supabase
@@ -228,14 +242,18 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.error('CartContext init error:', err);
       } finally {
+        initInFlightRef.current = false;
         setIsLoading(false);
       }
     };
 
     init();
-    return () => { if (channel) supabase.removeChannel(channel); };
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]); // Solo reacciona a cambios de sesión (login/logout), no al perfil o token refreshes
+  }, [user?.id]);
 
   // ── Agregar producto ──────────────────────────────────────────
   const addItem = useCallback(async (product: Product, qty: number = 1, size: string | null = null, color: string | null = null) => {
@@ -348,7 +366,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // ── Vaciar carrito ────────────────────────────────────────────
   const clearCart = useCallback(async () => {
     if (isGuest) {
-      clearGuestCart(); // 💥 MODIFICADO: Uso de la función limpia para consistencia
+      clearGuestCart();
       setItems([]);
       return;
     }
