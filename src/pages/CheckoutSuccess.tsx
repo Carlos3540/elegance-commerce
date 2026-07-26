@@ -96,6 +96,8 @@ const CheckoutSuccess: React.FC = () => {
       return;
     }
 
+    await supabase.auth.getSession();
+
     try {
       // 1. Obtener la orden
       const { data: orderData, error: orderErr } = await supabase

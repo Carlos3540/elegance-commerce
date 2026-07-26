@@ -73,46 +73,32 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setItems(loadGuestCart());
   }, []);
 
-  // ── SUPABASE: obtener o crear carrito (con reintento tras refresh) ──
-  const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
-    const tryOnce = async (): Promise<string> => {
-      const { data: existing, error: findErr } = await supabase
-        .from('carts')
-        .select('id')
-        .eq('user_id', userId)
-        .maybeSingle();
+  // ── SUPABASE: obtener o crear carrito ─────────────────────────
+const getOrCreateCart = useCallback(async (userId: string): Promise<string> => {
+  const { data: existing, error: findErr } = await supabase
+    .from('carts')
+    .select('id')
+    .eq('user_id', userId)
+    .maybeSingle();
 
-      if (findErr) throw findErr;
-      if (existing) return existing.id;
+  if (findErr) {
+    console.error('CartContext: error buscando carrito:', findErr.code, findErr.message);
+    throw findErr;
+  }
+  if (existing) return existing.id;
 
-      const { data: newCart, error: insertErr } = await supabase
-        .from('carts')
-        .insert({ user_id: userId })
-        .select('id')
-        .maybeSingle();
+  const { data: newCart, error: insertErr } = await supabase
+    .from('carts')
+    .insert({ user_id: userId })
+    .select('id')
+    .maybeSingle();
 
-      if (insertErr) throw insertErr;
-      return newCart?.id ?? '';
-    };
-
-    try {
-      return await tryOnce();
-    } catch (err: any) {
-      const isAuthIssue = err?.code === '42501' || err?.status === 401;
-      if (isAuthIssue) {
-        console.warn('CartContext: token no listo, forzando refresh y reintentando...');
-        try {
-          await supabase.auth.refreshSession();
-        } catch (refreshErr) {
-          console.error('CartContext: fallo al refrescar sesión:', refreshErr);
-        }
-        // Reintento único
-        return await tryOnce();
-      }
-      console.error('CartContext: error creando/buscando carrito:', err?.code, err?.message);
-      throw err;
-    }
-  }, []);
+  if (insertErr) {
+    console.error('CartContext: error creando carrito:', insertErr.code, insertErr.message);
+    throw insertErr;
+  }
+  return newCart?.id ?? '';
+}, []);
 
   // ── SUPABASE: cargar items ────────────────────────────────────
   const fetchItems = useCallback(async (cId: string) => {
